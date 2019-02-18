@@ -1,0 +1,8 @@
+package:
+  name: axi_riscv_atomics
+  authors: ["Andreas Kurth <akurth@iis.ee.ethz.ch>", "Samuel Riedel <sriedel@student.ethz.ch>"]
+
+dependencies:
+  # TODO: Once the special features we need from our dependencies are released in a tagged version,
+  # switch to that version for SemVer compatibility.
+  axi: { git: "https://github.com/pulp-platform/axi.git", rev: 3330f59b8668d8913e9835ba6b58d09536d2f209 }
