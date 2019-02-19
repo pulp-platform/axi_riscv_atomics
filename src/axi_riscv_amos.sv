@@ -26,7 +26,10 @@ module axi_riscv_amos #(
     parameter int unsigned AXI_ID_WIDTH       = 0,
     parameter int unsigned AXI_USER_WIDTH     = 0,
     parameter int unsigned MAX_OUTSTND_BURSTS = 8,
-    parameter int unsigned ALU_DATA_WIDTH     = AXI_ADDR_WIDTH
+    // Word width of the widest RISC-V processor that can issue requests to this module.
+    // 32 for RV32; 64 for RV64, where both 32-bit (.W suffix) and 64-bit (.D suffix) AMOs are
+    // supported if `aw_strb` is set correctly.
+    parameter int unsigned RISCV_WORD_WIDTH   = 0
 ) (
     input  logic    clk_i,
     input  logic    rst_ni,
@@ -35,7 +38,7 @@ module axi_riscv_amos #(
 );
 
     localparam int unsigned OUTSTND_BURSTS_WIDTH = $clog2(MAX_OUTSTND_BURSTS);
-    localparam int unsigned AXI_ALU_RATIO        = AXI_DATA_WIDTH/ALU_DATA_WIDTH;
+    localparam int unsigned AXI_ALU_RATIO        = AXI_DATA_WIDTH/RISCV_WORD_WIDTH;
     localparam int unsigned AXI_STRB_WIDTH       = AXI_DATA_WIDTH/8;
 
     // State types
@@ -84,10 +87,10 @@ module axi_riscv_amos #(
 
     logic                               adapter_ready;
 
-    logic [ALU_DATA_WIDTH-1:0]  alu_operand_a;
-    logic [ALU_DATA_WIDTH-1:0]  alu_operand_b;
-    logic [ALU_DATA_WIDTH-1:0]  alu_result;
-    logic [AXI_DATA_WIDTH-1:0]  alu_result_ext;
+    logic [RISCV_WORD_WIDTH-1:0]    alu_operand_a;
+    logic [RISCV_WORD_WIDTH-1:0]    alu_operand_b;
+    logic [RISCV_WORD_WIDTH-1:0]    alu_result;
+    logic [RISCV_WORD_WIDTH-1:0]    alu_result_ext;
 
     /**
      * Calculate ready signals and channel states
@@ -170,7 +173,7 @@ module axi_riscv_amos #(
                     atop_valid_d = INVALID;
                 end
                 // Unsupported size
-                if (slv.aw_size > $clog2(ALU_DATA_WIDTH/8)) begin
+                if (slv.aw_size > $clog2(RISCV_WORD_WIDTH/8)) begin
                     atop_valid_d = INVALID;
                 end
             end
@@ -828,9 +831,9 @@ module axi_riscv_amos #(
      * ALU
      */
 
-    logic [AXI_ALU_RATIO-1:0][ALU_DATA_WIDTH-1:0]   op_a;
-    logic [AXI_ALU_RATIO-1:0][ALU_DATA_WIDTH-1:0]   op_b;
-    logic [AXI_ALU_RATIO-1:0][ALU_DATA_WIDTH-1:0]   res;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_a;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_b;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] res;
     logic [AXI_STRB_WIDTH-1:0][7:0]                 strb_ext;
 
     assign op_a = read_data_q & strb_ext;
@@ -843,11 +846,11 @@ module axi_riscv_amos #(
             assign alu_operand_b  = op_b;
             assign res            = alu_result;
         end else begin
-            assign alu_operand_a  = op_a[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(ALU_DATA_WIDTH/8)]];
-            assign alu_operand_b  = op_b[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(ALU_DATA_WIDTH/8)]];
+            assign alu_operand_a  = op_a[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
+            assign alu_operand_b  = op_b[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
             always_comb begin
                 res = '0;
-                res[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(ALU_DATA_WIDTH/8)]] = alu_result;
+                res[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]] = alu_result;
             end
         end
     endgenerate
@@ -865,7 +868,7 @@ module axi_riscv_amos #(
     endgenerate
 
     axi_riscv_amos_alu #(
-        .DATA_WIDTH ( ALU_DATA_WIDTH )
+        .DATA_WIDTH ( RISCV_WORD_WIDTH )
     ) i_amo_alu (
         .amo_op_i           ( atop_q        ),
         .amo_operand_a_i    ( alu_operand_a ),
