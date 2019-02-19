@@ -14,8 +14,11 @@
 // This adapter implements atomic memory operations in accordance with the RVWMO memory consistency
 // model.
 //
-// Assumptions:
-//  -  The design contains combinational paths between AXI inputs and outputs.
+// Interface notes:
+// -  This module has combinational paths between AXI inputs and outputs for minimum latency. Add
+//    slices upstream or downstream or in both directions if combinatorial paths become too long.
+//    The module adheres to the AXI ready/valid dependency specification to prevent combinatorial
+//    loops.
 
 module axi_riscv_amos #(
     parameter int unsigned AXI_ADDR_WIDTH     = 0,
