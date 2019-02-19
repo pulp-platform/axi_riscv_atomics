@@ -50,7 +50,7 @@ module axi_riscv_amos #(
     typedef enum logic [2:0] { FEEDTHROUGH_W, WAIT_DATA, W_WAIT_RESULT, W_WAIT_CHANNEL, SEND_W } w_state_t;
     w_state_t   w_state_d, w_state_q;
 
-    typedef enum logic [1:0] { FEEDTHROUGH_B, WAIT_B, SEND_B } b_state_t;
+    typedef enum logic [1:0] { FEEDTHROUGH_B, WAIT_B, SEND_B, VALID_REQ } b_state_t;
     b_state_t   b_state_d, b_state_q;
 
     typedef enum logic [1:0] { FEEDTHROUGH_AR, WAIT_AR, REQ_AR } ar_state_t;
@@ -511,19 +511,23 @@ module axi_riscv_amos #(
         unique case (b_state_q)
 
             FEEDTHROUGH_B: begin
-                if (adapter_ready && atop_valid_d == INVALID) begin
-                    // Inject B resp
-                    // Check if the B channel is free
-                    if (mst.b_valid) begin
-                        b_state_d   = WAIT_B;
-                    end else begin
-                        mst.b_ready  = 1'b0;
-                        // Write B response
-                        slv.b_id     = slv.aw_id;
-                        slv.b_resp   = axi_pkg::RESP_SLVERR;
-                        slv.b_valid  = 1'b1;
-                        if (!slv.b_ready) begin
-                            b_state_d = SEND_B;
+                if (adapter_ready) begin
+                    if (atop_valid_d == VALID || atop_valid_d == STORE) begin
+                        b_state_d = VALID_REQ;
+                    end else if (atop_valid_d == INVALID) begin
+                        // Inject B resp
+                        // Check if the B channel is free
+                        if (mst.b_valid) begin
+                            b_state_d   = WAIT_B;
+                        end else begin
+                            mst.b_ready  = 1'b0;
+                            // Write B response
+                            slv.b_id     = slv.aw_id;
+                            slv.b_resp   = axi_pkg::RESP_SLVERR;
+                            slv.b_valid  = 1'b1;
+                            if (!slv.b_ready) begin
+                                b_state_d = SEND_B;
+                            end
                         end
                     end
                 end
@@ -543,6 +547,12 @@ module axi_riscv_amos #(
                     end
                 end
             end // WAIT_B
+
+            VALID_REQ: begin
+                if (mst.b_valid && mst.b_id == id_q) begin
+                    b_state_d = FEEDTHROUGH_B;
+                end
+            end // VALID_REQ
 
             default: b_state_d = FEEDTHROUGH_B;
 
