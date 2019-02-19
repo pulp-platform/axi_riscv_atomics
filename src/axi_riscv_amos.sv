@@ -845,11 +845,17 @@ module axi_riscv_amos #(
 
     logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_a;
     logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_b;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_a_sign_ext;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_b_sign_ext;
     logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] res;
     logic [AXI_STRB_WIDTH-1:0][7:0]                 strb_ext;
+    logic sign_a;
+    logic sign_b;
 
     assign op_a = read_data_q & strb_ext;
     assign op_b = atop_data_q & strb_ext;
+    assign sign_a = |(op_a & ~(strb_ext >> 1));
+    assign sign_b = |(op_b & ~(strb_ext >> 1));
     assign alu_result_ext = res;
 
     generate
@@ -858,9 +864,19 @@ module axi_riscv_amos #(
             assign alu_operand_b  = op_b;
             assign res            = alu_result;
         end else begin
-            assign alu_operand_a  = op_a[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
-            assign alu_operand_b  = op_b[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
             always_comb begin
+                op_a_sign_ext = op_a | ({AXI_ALU_RATIO*RISCV_WORD_WIDTH{sign_a}} & ~strb_ext);
+                op_b_sign_ext = op_b | ({AXI_ALU_RATIO*RISCV_WORD_WIDTH{sign_b}} & ~strb_ext);
+
+                if (atop_q[2:0] == axi_pkg::ATOP_SMAX || atop_q[2:0] == axi_pkg::ATOP_SMIN) begin
+                    // Sign extend
+                    alu_operand_a = op_a_sign_ext[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
+                    alu_operand_b = op_b_sign_ext[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
+                end else begin
+                    // No sign extension necessary
+                    alu_operand_a = op_a[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
+                    alu_operand_b = op_b[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
+                end
                 res = '0;
                 res[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]] = alu_result;
             end
