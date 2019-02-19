@@ -23,7 +23,6 @@ module axi_riscv_amos #(
     parameter int unsigned AXI_ID_WIDTH       = 0,
     parameter int unsigned AXI_USER_WIDTH     = 0,
     parameter int unsigned MAX_OUTSTND_BURSTS = 8,
-    parameter int unsigned AXI_STRB_WIDTH     = AXI_DATA_WIDTH/8,
     parameter int unsigned ALU_DATA_WIDTH     = AXI_ADDR_WIDTH
 ) (
     input  logic    clk_i,
@@ -34,6 +33,7 @@ module axi_riscv_amos #(
 
     localparam int unsigned OUTSTND_BURSTS_WIDTH = $clog2(MAX_OUTSTND_BURSTS);
     localparam int unsigned AXI_ALU_RATIO        = AXI_DATA_WIDTH/ALU_DATA_WIDTH;
+    localparam int unsigned AXI_STRB_WIDTH       = AXI_DATA_WIDTH/8;
 
     // State types
     typedef enum logic [1:0] { FEEDTHROUGH_AW, WAIT_ALU, WAIT_AW, REQ_AW } aw_state_t;
