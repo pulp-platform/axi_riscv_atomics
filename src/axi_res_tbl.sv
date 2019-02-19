@@ -78,4 +78,16 @@ module axi_res_tbl #(
         end
     end
 
+    // Validate parameters.
+// pragma translate_off
+`ifndef VERILATOR
+    initial begin: validate_params
+        assert (AXI_ADDR_WIDTH > 0)
+            else $fatal(1, "AXI_ADDR_WIDTH must be greater than 0!");
+        assert (AXI_ID_WIDTH > 0)
+            else $fatal(1, "AXI_ID_WIDTH must be greater than 0!");
+    end
+`endif
+// pragma translate_on
+
 endmodule
