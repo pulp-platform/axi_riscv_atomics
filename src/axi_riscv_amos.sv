@@ -767,7 +767,7 @@ module axi_riscv_amos #(
                 if (mst.r_valid && (mst.r_id == id_q)) begin
                     read_data_d = mst.r_data;
                     read_done_d = 1'b1;
-                    if (mst.r_ready) begin
+                    if (slv.r_ready) begin
                         r_state_d  = FEEDTHROUGH_R;
                     end
                 end
