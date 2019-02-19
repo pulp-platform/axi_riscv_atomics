@@ -261,4 +261,14 @@ module axi_riscv_lrsc_wrap #(
         .slv    (int_slv)
     );
 
+     // Validate parameters.
+`ifndef VERILATOR
+    initial begin: validate_params
+        assert (AXI_DATA_WIDTH > 0)
+            else $fatal(1, "AXI_DATA_WIDTH must be greater than 0!");
+        assert (AXI_STRB_WIDTH == AXI_DATA_WIDTH/8)
+            else $fatal(1, "AXI_STRB_WIDTH must equal AXI_DATA_WIDTH/8!");
+    end
+`endif
+
 endmodule
