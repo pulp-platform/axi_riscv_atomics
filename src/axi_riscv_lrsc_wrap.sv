@@ -253,12 +253,14 @@ module axi_riscv_lrsc_wrap #(
         .ADDR_BEGIN     (ADDR_BEGIN),
         .ADDR_END       (ADDR_END),
         .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
-        .AXI_ID_WIDTH   (AXI_ID_WIDTH)
+        .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+        .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+        .AXI_USER_WIDTH (AXI_USER_WIDTH)
     ) i_lrsc (
         .clk_i  (clk_i),
         .rst_ni (rst_ni),
-        .mst    (int_mst),
-        .slv    (int_slv)
+        .mst_port (int_mst),
+        .slv_port (int_slv)
     );
 
      // Validate parameters.

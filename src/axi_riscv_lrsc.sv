@@ -34,14 +34,30 @@ module axi_riscv_lrsc #(
     parameter longint unsigned ADDR_BEGIN = 0,
     parameter longint unsigned ADDR_END = 0,
     /// AXI Parameters
-    parameter int unsigned AXI_ADDR_WIDTH = 0,
-    parameter int unsigned AXI_ID_WIDTH = 0
+    parameter int unsigned AXI_ADDR_WIDTH       = 0,
+    parameter int unsigned AXI_DATA_WIDTH       = 0,
+    parameter int unsigned AXI_ID_WIDTH         = 0,
+    parameter int unsigned AXI_USER_WIDTH       = 0
 ) (
     input logic     clk_i,
     input logic     rst_ni,
-    AXI_BUS.Master  mst,
-    AXI_BUS.Slave   slv
+    AXI_BUS.Master  mst_port,
+    AXI_BUS.Slave   slv_port
 );
+
+    AXI_BUS #(
+      .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
+      .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
+      .AXI_ID_WIDTH   ( AXI_ID_WIDTH   ),
+      .AXI_USER_WIDTH ( AXI_USER_WIDTH )
+    ) mst();
+
+    AXI_BUS #(
+      .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
+      .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
+      .AXI_ID_WIDTH   ( AXI_ID_WIDTH   ),
+      .AXI_USER_WIDTH ( AXI_USER_WIDTH )
+    ) slv();
 
     // Declarations of Signals and Types
 
@@ -364,6 +380,20 @@ module axi_riscv_lrsc #(
         .oup_data_o     (art_clr_addr),
         .oup_valid_o    (art_clr_req),
         .oup_ready_i    (art_clr_gnt)
+    );
+
+    // ** Do not remove ** This fixes a bug in questasim
+    // Decouple the Interface ports from the internal signals.
+    // Setting the interface's signals directly can lead to
+    // infinite loops between always_comb blocks in modelsim.
+    axi_join i_axi_join_mst (
+        .in     ( mst      ),
+        .out    ( mst_port )
+    );
+
+    axi_join i_axi_join_slv (
+        .in     ( slv_port ),
+        .out    ( slv      )
     );
 
     // Registers
