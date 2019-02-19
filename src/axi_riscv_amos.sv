@@ -224,7 +224,7 @@ module axi_riscv_amos #(
 
         // Default control
         // Make sure the outstanding beats counter does not overflow
-        if ((slv.aw_valid && slv.aw_atop) || &w_cnt_q) begin
+        if (w_cnt_q == AXI_MAX_WRITE_TXNS || (slv.aw_valid && slv.aw_atop)) begin
             // Block if counter is overflowing or atomic request
             mst.aw_valid = 1'b0;
             slv.aw_ready = 1'b0;
