@@ -905,4 +905,22 @@ module axi_riscv_amos #(
         .out    ( slv      )
     );
 
+    // Validate parameters.
+`ifndef VERILATOR
+    initial begin: validate_params
+        assert (AXI_ADDR_WIDTH > 0)
+            else $fatal(1, "AXI_ADDR_WIDTH must be greater than 0!");
+        assert (AXI_DATA_WIDTH > 0)
+            else $fatal(1, "AXI_DATA_WIDTH must be greater than 0!");
+        assert (AXI_ID_WIDTH > 0)
+            else $fatal(1, "AXI_ID_WIDTH must be greater than 0!");
+        assert (AXI_MAX_WRITE_TXNS > 0)
+            else $fatal(1, "AXI_MAX_WRITE_TXNS must be greater than 0!");
+        assert (RISCV_WORD_WIDTH == 32 || RISCV_WORD_WIDTH == 64)
+            else $fatal(1, "RISCV_WORD_WIDTH must be 32 or 64!");
+        assert (RISCV_WORD_WIDTH <= AXI_DATA_WIDTH)
+            else $fatal(1, "RISCV_WORD_WIDTH must not be greater than AXI_DATA_WIDTH!");
+    end
+`endif
+
 endmodule
