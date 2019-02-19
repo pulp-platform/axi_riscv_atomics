@@ -385,4 +385,16 @@ module axi_riscv_lrsc #(
         end
     end
 
+     // Validate parameters.
+`ifndef VERILATOR
+    initial begin: validate_params
+        assert (ADDR_END > ADDR_BEGIN)
+            else $fatal(1, "ADDR_END must be greater than ADDR_BEGIN!");
+        assert (AXI_ADDR_WIDTH > 0)
+            else $fatal(1, "AXI_ADDR_WIDTH must be greater than 0!");
+        assert (AXI_ID_WIDTH > 0)
+            else $fatal(1, "AXI_ID_WIDTH must be greater than 0!");
+    end
+`endif
+
 endmodule
