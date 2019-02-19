@@ -14,7 +14,9 @@ sources:
   # etc.  Files within a level are ordered alphabetically.
   # Level 0
   - src/axi_res_tbl.sv
+  - src/axi_riscv_amos_alu.sv
   # Level 1
+  - src/axi_riscv_amos.sv
   - src/axi_riscv_lrsc.sv
   # Level 2
   - src/axi_riscv_lrsc_wrap.sv
