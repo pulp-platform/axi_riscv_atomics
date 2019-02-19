@@ -253,20 +253,20 @@ module axi_riscv_lrsc_wrap #(
         .ADDR_BEGIN     (ADDR_BEGIN),
         .ADDR_END       (ADDR_END),
         .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
-        .AXI_ID_WIDTH   (AXI_ID_WIDTH)
+        .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
+        .AXI_ID_WIDTH   (AXI_ID_WIDTH),
+        .AXI_USER_WIDTH (AXI_USER_WIDTH)
     ) i_lrsc (
-        .clk_i  (clk_i),
-        .rst_ni (rst_ni),
-        .mst    (int_mst),
-        .slv    (int_slv)
+        .clk_i      (clk_i),
+        .rst_ni     (rst_ni),
+        .mst_port   (int_mst),
+        .slv_port   (int_slv)
     );
 
     // Validate parameters.
 // pragma translate_off
 `ifndef VERILATOR
     initial begin: validate_params
-        assert (AXI_DATA_WIDTH > 0)
-            else $fatal(1, "AXI_DATA_WIDTH must be greater than 0!");
         assert (AXI_STRB_WIDTH == AXI_DATA_WIDTH/8)
             else $fatal(1, "AXI_STRB_WIDTH must equal AXI_DATA_WIDTH/8!");
     end
