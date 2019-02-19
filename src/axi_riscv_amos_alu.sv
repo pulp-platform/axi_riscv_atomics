@@ -64,4 +64,13 @@ module axi_riscv_amos_alu # (
             endcase
         end
     end
+
+    // Validate parameters.
+`ifndef VERILATOR
+    initial begin: validate_params
+        assert (DATA_WIDTH > 0)
+            else $fatal(1, "DATA_WIDTH must be greater than 0!");
+    end
+`endif
+
 endmodule
