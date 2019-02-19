@@ -50,7 +50,7 @@ module axi_riscv_amos #(
     typedef enum logic [2:0] { FEEDTHROUGH_W, WAIT_DATA, W_WAIT_RESULT, W_WAIT_CHANNEL, SEND_W } w_state_t;
     w_state_t   w_state_d, w_state_q;
 
-    typedef enum logic [1:0] { FEEDTHROUGH_B, WAIT_B, SEND_B } b_state_t;
+    typedef enum logic [1:0] { FEEDTHROUGH_B, WAIT_B, SEND_B, VALID_REQ } b_state_t;
     b_state_t   b_state_d, b_state_q;
 
     typedef enum logic [1:0] { FEEDTHROUGH_AR, WAIT_AR, REQ_AR } ar_state_t;
@@ -511,19 +511,23 @@ module axi_riscv_amos #(
         unique case (b_state_q)
 
             FEEDTHROUGH_B: begin
-                if (adapter_ready && atop_valid_d == INVALID) begin
-                    // Inject B resp
-                    // Check if the B channel is free
-                    if (mst.b_valid) begin
-                        b_state_d   = WAIT_B;
-                    end else begin
-                        mst.b_ready  = 1'b0;
-                        // Write B response
-                        slv.b_id     = slv.aw_id;
-                        slv.b_resp   = axi_pkg::RESP_SLVERR;
-                        slv.b_valid  = 1'b1;
-                        if (!slv.b_ready) begin
-                            b_state_d = SEND_B;
+                if (adapter_ready) begin
+                    if (atop_valid_d == VALID || atop_valid_d == STORE) begin
+                        b_state_d = VALID_REQ;
+                    end else if (atop_valid_d == INVALID) begin
+                        // Inject B resp
+                        // Check if the B channel is free
+                        if (mst.b_valid) begin
+                            b_state_d   = WAIT_B;
+                        end else begin
+                            mst.b_ready  = 1'b0;
+                            // Write B response
+                            slv.b_id     = slv.aw_id;
+                            slv.b_resp   = axi_pkg::RESP_SLVERR;
+                            slv.b_valid  = 1'b1;
+                            if (!slv.b_ready) begin
+                                b_state_d = SEND_B;
+                            end
                         end
                     end
                 end
@@ -543,6 +547,12 @@ module axi_riscv_amos #(
                     end
                 end
             end // WAIT_B
+
+            VALID_REQ: begin
+                if (mst.b_valid && mst.b_id == id_q) begin
+                    b_state_d = FEEDTHROUGH_B;
+                end
+            end // VALID_REQ
 
             default: b_state_d = FEEDTHROUGH_B;
 
@@ -757,7 +767,7 @@ module axi_riscv_amos #(
                 if (mst.r_valid && (mst.r_id == id_q)) begin
                     read_data_d = mst.r_data;
                     read_done_d = 1'b1;
-                    if (mst.r_ready) begin
+                    if (slv.r_ready) begin
                         r_state_d  = FEEDTHROUGH_R;
                     end
                 end
@@ -835,11 +845,17 @@ module axi_riscv_amos #(
 
     logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_a;
     logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_b;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_a_sign_ext;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_b_sign_ext;
     logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] res;
     logic [AXI_STRB_WIDTH-1:0][7:0]                 strb_ext;
+    logic sign_a;
+    logic sign_b;
 
     assign op_a = read_data_q & strb_ext;
     assign op_b = atop_data_q & strb_ext;
+    assign sign_a = |(op_a & ~(strb_ext >> 1));
+    assign sign_b = |(op_b & ~(strb_ext >> 1));
     assign alu_result_ext = res;
 
     generate
@@ -848,9 +864,19 @@ module axi_riscv_amos #(
             assign alu_operand_b  = op_b;
             assign res            = alu_result;
         end else begin
-            assign alu_operand_a  = op_a[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
-            assign alu_operand_b  = op_b[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
             always_comb begin
+                op_a_sign_ext = op_a | ({AXI_ALU_RATIO*RISCV_WORD_WIDTH{sign_a}} & ~strb_ext);
+                op_b_sign_ext = op_b | ({AXI_ALU_RATIO*RISCV_WORD_WIDTH{sign_b}} & ~strb_ext);
+
+                if (atop_q[2:0] == axi_pkg::ATOP_SMAX || atop_q[2:0] == axi_pkg::ATOP_SMIN) begin
+                    // Sign extend
+                    alu_operand_a = op_a_sign_ext[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
+                    alu_operand_b = op_b_sign_ext[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
+                end else begin
+                    // No sign extension necessary
+                    alu_operand_a = op_a[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
+                    alu_operand_b = op_b[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]];
+                end
                 res = '0;
                 res[addr_q[$clog2(AXI_DATA_WIDTH/8)-1:$clog2(RISCV_WORD_WIDTH/8)]] = alu_result;
             end
