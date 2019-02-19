@@ -37,7 +37,7 @@ module axi_riscv_amos #(
     AXI_BUS.Slave   slv_port
 );
 
-    localparam int unsigned OUTSTND_BURSTS_WIDTH = $clog2(MAX_OUTSTND_BURSTS);
+    localparam int unsigned OUTSTND_BURSTS_WIDTH = $clog2(MAX_OUTSTND_BURSTS+1);
     localparam int unsigned AXI_ALU_RATIO        = AXI_DATA_WIDTH/RISCV_WORD_WIDTH;
     localparam int unsigned AXI_STRB_WIDTH       = AXI_DATA_WIDTH/8;
 
