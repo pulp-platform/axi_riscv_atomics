@@ -92,7 +92,7 @@ module axi_riscv_amos #(
     logic [RISCV_WORD_WIDTH-1:0]    alu_operand_a;
     logic [RISCV_WORD_WIDTH-1:0]    alu_operand_b;
     logic [RISCV_WORD_WIDTH-1:0]    alu_result;
-    logic [RISCV_WORD_WIDTH-1:0]    alu_result_ext;
+    logic [AXI_DATA_WIDTH-1:0]      alu_result_ext;
 
     /**
      * Calculate ready signals and channel states
