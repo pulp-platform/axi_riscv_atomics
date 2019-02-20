@@ -193,6 +193,7 @@ module axi_riscv_lrsc #(
     assign mst.aw_addr      = slv.aw_addr;
     assign mst.aw_prot      = slv.aw_prot;
     assign mst.aw_region    = slv.aw_region;
+    assign mst.aw_atop      = slv.aw_atop;
     assign mst.aw_len       = slv.aw_len;
     assign mst.aw_size      = slv.aw_size;
     assign mst.aw_burst     = slv.aw_burst;
