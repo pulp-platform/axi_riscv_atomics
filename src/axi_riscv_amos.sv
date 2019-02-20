@@ -217,6 +217,11 @@ module axi_riscv_amos #(
         id_d         = id_q;
         size_d       = size_q;
         atop_d       = atop_q;
+        cache_d      = cache_q;
+        prot_d       = prot_q;
+        qos_d        = qos_q;
+        region_d     = region_q;
+        user_d       = user_q;
         w_cnt_inj_d  = w_cnt_inj_q;
         // State Machine
         aw_state_d   = aw_state_q;
