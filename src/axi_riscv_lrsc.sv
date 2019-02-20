@@ -398,19 +398,19 @@ module axi_riscv_lrsc #(
     // Registers
     always_ff @(posedge clk_i, negedge rst_ni) begin
         if (~rst_ni) begin
-            b_excl_q    = 1'b0;
-            r_excl_q    = 1'b0;
-            r_state_q   = R_IDLE;
-            w_addr_q    = '0;
-            w_id_q      = '0;
-            w_state_q   = AW_IDLE;
+            b_excl_q    <= 1'b0;
+            r_excl_q    <= 1'b0;
+            r_state_q   <= R_IDLE;
+            w_addr_q    <= '0;
+            w_id_q      <= '0;
+            w_state_q   <= AW_IDLE;
         end else begin
-            b_excl_q    = b_excl_d;
-            r_excl_q    = r_excl_d;
-            r_state_q   = r_state_d;
-            w_addr_q    = w_addr_d;
-            w_id_q      = w_id_d;
-            w_state_q   = w_state_d;
+            b_excl_q    <= b_excl_d;
+            r_excl_q    <= r_excl_d;
+            r_state_q   <= r_state_d;
+            w_addr_q    <= w_addr_d;
+            w_id_q      <= w_id_d;
+            w_state_q   <= w_state_d;
         end
     end
 
