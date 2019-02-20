@@ -79,7 +79,6 @@ module axi_riscv_amos #(
     logic [5:0]                         atop_d, atop_q;
     logic                               data_valid_d, data_valid_q;
 
-    logic                               read_req_d, read_req_q;
     logic                               read_done_d, read_done_q;
     logic                               atop_req_in;
     logic                               valid_atop_req_in;
@@ -591,7 +590,6 @@ module axi_riscv_amos #(
             write_data_q <= '0;
             data_valid_q <= '0;
             atop_q       <= 6'b0;
-            read_req_q   <= 1'b0;
         end else begin
             aw_state_q   <= aw_state_d;
             w_state_q    <= w_state_d;
@@ -612,7 +610,6 @@ module axi_riscv_amos #(
             write_data_q <= write_data_d;
             data_valid_q <= data_valid_d;
             atop_q       <= atop_d;
-            read_req_q   <= read_req_d;
         end
     end
 
