@@ -37,27 +37,115 @@ module axi_riscv_lrsc #(
     parameter int unsigned AXI_ADDR_WIDTH = 0,
     parameter int unsigned AXI_DATA_WIDTH = 0,
     parameter int unsigned AXI_ID_WIDTH = 0,
-    parameter int unsigned AXI_USER_WIDTH = 0
+    parameter int unsigned AXI_USER_WIDTH = 0,
+    /// Derived Parameters (do NOT change manually!)
+    localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8
 ) (
-    input logic     clk_i,
-    input logic     rst_ni,
-    AXI_BUS.Master  mst_port,
-    AXI_BUS.Slave   slv_port
+    input logic                         clk_i,
+    input logic                         rst_ni,
+
+    /// Slave Interface
+    input  logic [AXI_ADDR_WIDTH-1:0]   slv_aw_addr_i,
+    input  logic [2:0]                  slv_aw_prot_i,
+    input  logic [3:0]                  slv_aw_region_i,
+    input  logic [5:0]                  slv_aw_atop_i,
+    input  logic [7:0]                  slv_aw_len_i,
+    input  logic [2:0]                  slv_aw_size_i,
+    input  logic [1:0]                  slv_aw_burst_i,
+    input  logic                        slv_aw_lock_i,
+    input  logic [3:0]                  slv_aw_cache_i,
+    input  logic [3:0]                  slv_aw_qos_i,
+    input  logic [AXI_ID_WIDTH-1:0]     slv_aw_id_i,
+    input  logic [AXI_USER_WIDTH-1:0]   slv_aw_user_i,
+    output logic                        slv_aw_ready_o,
+    input  logic                        slv_aw_valid_i,
+
+    input  logic [AXI_ADDR_WIDTH-1:0]   slv_ar_addr_i,
+    input  logic [2:0]                  slv_ar_prot_i,
+    input  logic [3:0]                  slv_ar_region_i,
+    input  logic [7:0]                  slv_ar_len_i,
+    input  logic [2:0]                  slv_ar_size_i,
+    input  logic [1:0]                  slv_ar_burst_i,
+    input  logic                        slv_ar_lock_i,
+    input  logic [3:0]                  slv_ar_cache_i,
+    input  logic [3:0]                  slv_ar_qos_i,
+    input  logic [AXI_ID_WIDTH-1:0]     slv_ar_id_i,
+    input  logic [AXI_USER_WIDTH-1:0]   slv_ar_user_i,
+    output logic                        slv_ar_ready_o,
+    input  logic                        slv_ar_valid_i,
+
+    input  logic [AXI_DATA_WIDTH-1:0]   slv_w_data_i,
+    input  logic [AXI_STRB_WIDTH-1:0]   slv_w_strb_i,
+    input  logic [AXI_USER_WIDTH-1:0]   slv_w_user_i,
+    input  logic                        slv_w_last_i,
+    output logic                        slv_w_ready_o,
+    input  logic                        slv_w_valid_i,
+
+    output logic [AXI_DATA_WIDTH-1:0]   slv_r_data_o,
+    output logic [1:0]                  slv_r_resp_o,
+    output logic                        slv_r_last_o,
+    output logic [AXI_ID_WIDTH-1:0]     slv_r_id_o,
+    output logic [AXI_USER_WIDTH-1:0]   slv_r_user_o,
+    input  logic                        slv_r_ready_i,
+    output logic                        slv_r_valid_o,
+
+    output logic [1:0]                  slv_b_resp_o,
+    output logic [AXI_ID_WIDTH-1:0]     slv_b_id_o,
+    output logic [AXI_USER_WIDTH-1:0]   slv_b_user_o,
+    input  logic                        slv_b_ready_i,
+    output logic                        slv_b_valid_o,
+
+    /// Master Interface
+    output logic [AXI_ADDR_WIDTH-1:0]   mst_aw_addr_o,
+    output logic [2:0]                  mst_aw_prot_o,
+    output logic [3:0]                  mst_aw_region_o,
+    output logic [5:0]                  mst_aw_atop_o,
+    output logic [7:0]                  mst_aw_len_o,
+    output logic [2:0]                  mst_aw_size_o,
+    output logic [1:0]                  mst_aw_burst_o,
+    output logic                        mst_aw_lock_o,
+    output logic [3:0]                  mst_aw_cache_o,
+    output logic [3:0]                  mst_aw_qos_o,
+    output logic [AXI_ID_WIDTH-1:0]     mst_aw_id_o,
+    output logic [AXI_USER_WIDTH-1:0]   mst_aw_user_o,
+    input  logic                        mst_aw_ready_i,
+    output logic                        mst_aw_valid_o,
+
+    output logic [AXI_ADDR_WIDTH-1:0]   mst_ar_addr_o,
+    output logic [2:0]                  mst_ar_prot_o,
+    output logic [3:0]                  mst_ar_region_o,
+    output logic [7:0]                  mst_ar_len_o,
+    output logic [2:0]                  mst_ar_size_o,
+    output logic [1:0]                  mst_ar_burst_o,
+    output logic                        mst_ar_lock_o,
+    output logic [3:0]                  mst_ar_cache_o,
+    output logic [3:0]                  mst_ar_qos_o,
+    output logic [AXI_ID_WIDTH-1:0]     mst_ar_id_o,
+    output logic [AXI_USER_WIDTH-1:0]   mst_ar_user_o,
+    input  logic                        mst_ar_ready_i,
+    output logic                        mst_ar_valid_o,
+
+    output logic [AXI_DATA_WIDTH-1:0]   mst_w_data_o,
+    output logic [AXI_STRB_WIDTH-1:0]   mst_w_strb_o,
+    output logic [AXI_USER_WIDTH-1:0]   mst_w_user_o,
+    output logic                        mst_w_last_o,
+    input  logic                        mst_w_ready_i,
+    output logic                        mst_w_valid_o,
+
+    input  logic [AXI_DATA_WIDTH-1:0]   mst_r_data_i,
+    input  logic [1:0]                  mst_r_resp_i,
+    input  logic                        mst_r_last_i,
+    input  logic [AXI_ID_WIDTH-1:0]     mst_r_id_i,
+    input  logic [AXI_USER_WIDTH-1:0]   mst_r_user_i,
+    output logic                        mst_r_ready_o,
+    input  logic                        mst_r_valid_i,
+
+    input  logic [1:0]                  mst_b_resp_i,
+    input  logic [AXI_ID_WIDTH-1:0]     mst_b_id_i,
+    input  logic [AXI_USER_WIDTH-1:0]   mst_b_user_i,
+    output logic                        mst_b_ready_o,
+    input  logic                        mst_b_valid_i
 );
-
-    AXI_BUS #(
-      .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
-      .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
-      .AXI_ID_WIDTH   ( AXI_ID_WIDTH   ),
-      .AXI_USER_WIDTH ( AXI_USER_WIDTH )
-    ) mst();
-
-    AXI_BUS #(
-      .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
-      .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
-      .AXI_ID_WIDTH   ( AXI_ID_WIDTH   ),
-      .AXI_USER_WIDTH ( AXI_USER_WIDTH )
-    ) slv();
 
     // Declarations of Signals and Types
 
@@ -93,29 +181,29 @@ module axi_riscv_lrsc #(
     // AR and R Channel
 
     // Time-Invariant Signal Assignments
-    assign mst.ar_addr      = slv.ar_addr;
-    assign mst.ar_prot      = slv.ar_prot;
-    assign mst.ar_region    = slv.ar_region;
-    assign mst.ar_len       = slv.ar_len;
-    assign mst.ar_size      = slv.ar_size;
-    assign mst.ar_burst     = slv.ar_burst;
-    assign mst.ar_lock      = 1'b0;
-    assign mst.ar_cache     = slv.ar_cache;
-    assign mst.ar_qos       = slv.ar_qos;
-    assign mst.ar_id        = slv.ar_id;
-    assign mst.ar_user      = slv.ar_user;
-    assign slv.r_data       = mst.r_data;
-    assign slv.r_last       = mst.r_last;
-    assign slv.r_id         = mst.r_id;
-    assign slv.r_user       = mst.r_user;
+    assign mst_ar_addr_o      = slv_ar_addr_i;
+    assign mst_ar_prot_o      = slv_ar_prot_i;
+    assign mst_ar_region_o    = slv_ar_region_i;
+    assign mst_ar_len_o       = slv_ar_len_i;
+    assign mst_ar_size_o      = slv_ar_size_i;
+    assign mst_ar_burst_o     = slv_ar_burst_i;
+    assign mst_ar_lock_o      = 1'b0;
+    assign mst_ar_cache_o     = slv_ar_cache_i;
+    assign mst_ar_qos_o       = slv_ar_qos_i;
+    assign mst_ar_id_o        = slv_ar_id_i;
+    assign mst_ar_user_o      = slv_ar_user_i;
+    assign slv_r_data_o       = mst_r_data_i;
+    assign slv_r_last_o       = mst_r_last_i;
+    assign slv_r_id_o         = mst_r_id_i;
+    assign slv_r_user_o       = mst_r_user_i;
 
     // FSM for Time-Variant Signal Assignments
     always_comb begin
-        mst.ar_valid    = 1'b0;
-        slv.ar_ready    = 1'b0;
-        mst.r_ready     = 1'b0;
-        slv.r_valid     = 1'b0;
-        slv.r_resp      = '0;
+        mst_ar_valid_o  = 1'b0;
+        slv_ar_ready_o  = 1'b0;
+        mst_r_ready_o   = 1'b0;
+        slv_r_valid_o   = 1'b0;
+        slv_r_resp_o    = '0;
         art_set_addr    = '0;
         art_set_id      = '0;
         art_set_req     = 1'b0;
@@ -127,19 +215,19 @@ module axi_riscv_lrsc #(
         case (r_state_q)
 
             R_IDLE: begin
-                if (slv.ar_valid) begin
-                    if (slv.ar_addr >= ADDR_BEGIN && slv.ar_addr <= ADDR_END && slv.ar_lock &&
-                            slv.ar_len == 8'h00) begin
+                if (slv_ar_valid_i) begin
+                    if (slv_ar_addr_i >= ADDR_BEGIN && slv_ar_addr_i <= ADDR_END && slv_ar_lock_i &&
+                            slv_ar_len_i == 8'h00) begin
                         // Inside exclusively-accessible address range and exclusive access and no
                         // burst
-                        art_set_addr    = slv.ar_addr;
-                        art_set_id      = slv.ar_id;
+                        art_set_addr    = slv_ar_addr_i;
+                        art_set_id      = slv_ar_id_i;
                         art_set_req     = 1'b1;
                         r_excl_d        = 1'b1;
                         if (art_set_gnt) begin
-                            mst.ar_valid = 1'b1;
-                            if (mst.ar_ready) begin
-                                slv.ar_ready = 1'b1;
+                            mst_ar_valid_o = 1'b1;
+                            if (mst_ar_ready_i) begin
+                                slv_ar_ready_o = 1'b1;
                                 r_state_d = R_WAIT_R;
                             end else begin
                                 r_state_d = R_WAIT_AR;
@@ -148,9 +236,9 @@ module axi_riscv_lrsc #(
                     end else begin
                         // Outside exclusively-accessible address range or regular access or burst
                         r_excl_d = 1'b0;
-                        mst.ar_valid = 1'b1;
-                        if (mst.ar_ready) begin
-                            slv.ar_ready = 1'b1;
+                        mst_ar_valid_o = 1'b1;
+                        if (mst_ar_ready_i) begin
+                            slv_ar_ready_o = 1'b1;
                             r_state_d = R_WAIT_R;
                         end else begin
                             r_state_d = R_WAIT_AR;
@@ -160,22 +248,22 @@ module axi_riscv_lrsc #(
             end
 
             R_WAIT_AR: begin
-                mst.ar_valid = slv.ar_valid;
-                slv.ar_ready = mst.ar_ready;
-                if (mst.ar_ready && mst.ar_valid) begin
+                mst_ar_valid_o = slv_ar_valid_i;
+                slv_ar_ready_o = mst_ar_ready_i;
+                if (mst_ar_ready_i && mst_ar_valid_o) begin
                     r_state_d = R_WAIT_R;
                 end
             end
 
             R_WAIT_R: begin
-                mst.r_ready = slv.r_ready;
-                slv.r_valid = mst.r_valid;
-                if (mst.r_resp[1] == 1'b0) begin
-                    slv.r_resp = {1'b0, r_excl_q};
+                mst_r_ready_o = slv_r_ready_i;
+                slv_r_valid_o = mst_r_valid_i;
+                if (mst_r_resp_i[1] == 1'b0) begin
+                    slv_r_resp_o = {1'b0, r_excl_q};
                 end else begin
-                    slv.r_resp = mst.r_resp;
+                    slv_r_resp_o = mst_r_resp_i;
                 end
-                if (mst.r_valid && mst.r_ready && mst.r_last) begin
+                if (mst_r_valid_i && mst_r_ready_o && mst_r_last_i) begin
                     r_excl_d    = 1'b0;
                     r_state_d   = R_IDLE;
                 end
@@ -190,43 +278,43 @@ module axi_riscv_lrsc #(
     // AW, W and B Channel
 
     // Time-Invariant Signal Assignments
-    assign mst.aw_addr      = slv.aw_addr;
-    assign mst.aw_prot      = slv.aw_prot;
-    assign mst.aw_region    = slv.aw_region;
-    assign mst.aw_atop      = slv.aw_atop;
-    assign mst.aw_len       = slv.aw_len;
-    assign mst.aw_size      = slv.aw_size;
-    assign mst.aw_burst     = slv.aw_burst;
-    assign mst.aw_lock      = 1'b0;
-    assign mst.aw_cache     = slv.aw_cache;
-    assign mst.aw_qos       = slv.aw_qos;
-    assign mst.aw_id        = slv.aw_id;
-    assign mst.aw_user      = slv.aw_user;
-    assign mst.w_data       = slv.w_data;
-    assign mst.w_strb       = slv.w_strb;
-    assign mst.w_user       = slv.w_user;
-    assign mst.w_last       = slv.w_last;
+    assign mst_aw_addr_o    = slv_aw_addr_i;
+    assign mst_aw_prot_o    = slv_aw_prot_i;
+    assign mst_aw_region_o  = slv_aw_region_i;
+    assign mst_aw_atop_o    = slv_aw_atop_i;
+    assign mst_aw_len_o     = slv_aw_len_i;
+    assign mst_aw_size_o    = slv_aw_size_i;
+    assign mst_aw_burst_o   = slv_aw_burst_i;
+    assign mst_aw_lock_o    = 1'b0;
+    assign mst_aw_cache_o   = slv_aw_cache_i;
+    assign mst_aw_qos_o     = slv_aw_qos_i;
+    assign mst_aw_id_o      = slv_aw_id_i;
+    assign mst_aw_user_o    = slv_aw_user_i;
+    assign mst_w_data_o     = slv_w_data_i;
+    assign mst_w_strb_o     = slv_w_strb_i;
+    assign mst_w_user_o     = slv_w_user_i;
+    assign mst_w_last_o     = slv_w_last_i;
 
     always_comb begin
         w_addr_d    = w_addr_q;
         w_id_d      = w_id_q;
-        if (slv.aw_valid && slv.aw_ready) begin
-            w_addr_d    = slv.aw_addr;
-            w_id_d      = slv.aw_id;
+        if (slv_aw_valid_i && slv_aw_ready_o) begin
+            w_addr_d    = slv_aw_addr_i;
+            w_id_d      = slv_aw_id_i;
         end
     end
 
     // FSM for Time-Variant Signal Assignments
     always_comb begin
-        mst.aw_valid    = 1'b0;
-        slv.aw_ready    = 1'b0;
-        mst.w_valid     = 1'b0;
-        slv.w_ready     = 1'b0;
-        slv.b_valid     = 1'b0;
-        mst.b_ready     = 1'b0;
-        slv.b_resp      = '0;
-        slv.b_id        = '0;
-        slv.b_user      = '0;
+        mst_aw_valid_o  = 1'b0;
+        slv_aw_ready_o  = 1'b0;
+        mst_w_valid_o   = 1'b0;
+        slv_w_ready_o   = 1'b0;
+        slv_b_valid_o   = 1'b0;
+        mst_b_ready_o   = 1'b0;
+        slv_b_resp_o    = '0;
+        slv_b_id_o      = '0;
+        slv_b_user_o    = '0;
         art_check_addr  = '0;
         art_check_id    = '0;
         art_check_req   = 1'b0;
@@ -238,44 +326,44 @@ module axi_riscv_lrsc #(
         case (w_state_q)
 
             AW_IDLE: begin
-                if (slv.aw_valid) begin
+                if (slv_aw_valid_i) begin
                     // New AW, and W channel is idle
-                    if (slv.aw_addr >= ADDR_BEGIN && slv.aw_addr <= ADDR_END) begin
+                    if (slv_aw_addr_i >= ADDR_BEGIN && slv_aw_addr_i <= ADDR_END) begin
                         // Inside exclusively-accessible address range
-                        if (slv.aw_lock && slv.aw_len == 8'h00) begin
+                        if (slv_aw_lock_i && slv_aw_len_i == 8'h00) begin
                             // Exclusive access and no burst, so check if reservation exists
-                            art_check_addr  = slv.aw_addr;
-                            art_check_id    = slv.aw_id;
+                            art_check_addr  = slv_aw_addr_i;
+                            art_check_id    = slv_aw_id_i;
                             art_check_req   = 1'b1;
                             if (art_check_gnt) begin
                                 if (art_check_res) begin
                                     // Yes, so forward downstream
-                                    mst.aw_valid = 1'b1;
-                                    if (mst.aw_ready) begin
-                                        slv.aw_ready    = 1'b1;
+                                    mst_aw_valid_o = 1'b1;
+                                    if (mst_aw_ready_i) begin
+                                        slv_aw_ready_o    = 1'b1;
                                         b_excl_d        = 1'b1;
                                         w_state_d       = W_FORWARD;
                                     end
                                 end else begin
                                     // No, drop in W channel.
-                                    slv.aw_ready    = 1'b1;
+                                    slv_aw_ready_o    = 1'b1;
                                     w_state_d       = W_DROP;
                                 end
                             end
                         end else begin
                             // Non-exclusive access or burst, so forward downstream
-                            mst.aw_valid = 1'b1;
-                            if (mst.aw_ready) begin
-                                slv.aw_ready    = 1'b1;
+                            mst_aw_valid_o = 1'b1;
+                            if (mst_aw_ready_i) begin
+                                slv_aw_ready_o    = 1'b1;
                                 w_state_d       = W_FORWARD;
                             end
                         end
                     end else begin
                         // Outside exclusively-accessible address range, so bypass any
                         // modifications.
-                        mst.aw_valid = 1'b1;
-                        slv.aw_ready = mst.aw_ready;
-                        if (slv.aw_ready) begin
+                        mst_aw_valid_o = 1'b1;
+                        slv_aw_ready_o = mst_aw_ready_i;
+                        if (slv_aw_ready_o) begin
                             w_state_d = W_BYPASS;
                         end
                     end
@@ -283,9 +371,9 @@ module axi_riscv_lrsc #(
             end
 
             W_FORWARD: begin
-                mst.w_valid = slv.w_valid;
-                slv.w_ready = mst.w_ready;
-                if (slv.w_valid && slv.w_ready && slv.w_last) begin
+                mst_w_valid_o = slv_w_valid_i;
+                slv_w_ready_o = mst_w_ready_i;
+                if (slv_w_valid_i && slv_w_ready_o && slv_w_last_i) begin
                     wr_clr_addr = w_addr_q;
                     wr_clr_req  = 1'b1;
                     if (wr_clr_gnt) begin
@@ -297,9 +385,9 @@ module axi_riscv_lrsc #(
             end
 
             W_BYPASS: begin
-                mst.w_valid = slv.w_valid;
-                slv.w_ready = mst.w_ready;
-                if (slv.w_valid && slv.w_ready && slv.w_last) begin
+                mst_w_valid_o = slv_w_valid_i;
+                slv_w_ready_o = mst_w_ready_i;
+                if (slv_w_valid_i && slv_w_ready_o && slv_w_last_i) begin
                     w_state_d = B_FORWARD;
                 end
             end
@@ -313,30 +401,30 @@ module axi_riscv_lrsc #(
             end
 
             W_DROP: begin
-                slv.w_ready = 1'b1;
-                if (slv.w_valid && slv.w_last) begin
+                slv_w_ready_o = 1'b1;
+                if (slv_w_valid_i && slv_w_last_i) begin
                     w_state_d = B_INJECT;
                 end
             end
 
             B_FORWARD: begin
-                mst.b_ready     = slv.b_ready;
-                slv.b_valid     = mst.b_valid;
-                slv.b_resp[1]   = mst.b_resp[1];
-                slv.b_resp[0]   = (mst.b_resp[1] == 1'b0) ? b_excl_q : mst.b_resp[0];
-                slv.b_user      = mst.b_user;
-                slv.b_id        = mst.b_id;
-                if (slv.b_valid && slv.b_ready) begin
+                mst_b_ready_o   = slv_b_ready_i;
+                slv_b_valid_o   = mst_b_valid_i;
+                slv_b_resp_o[1] = mst_b_resp_i[1];
+                slv_b_resp_o[0] = (mst_b_resp_i[1] == 1'b0) ? b_excl_q : mst_b_resp_i[0];
+                slv_b_user_o    = mst_b_user_i;
+                slv_b_id_o      = mst_b_id_i;
+                if (slv_b_valid_o && slv_b_ready_i) begin
                     b_excl_d    = 1'b0;
                     w_state_d   = AW_IDLE;
                 end
             end
 
             B_INJECT: begin
-                slv.b_id = w_id_q;
-                slv.b_resp = 2'b00;
-                slv.b_valid = 1'b1;
-                if (slv.b_ready) begin
+                slv_b_id_o = w_id_q;
+                slv_b_resp_o = 2'b00;
+                slv_b_valid_o = 1'b1;
+                if (slv_b_ready_i) begin
                     w_state_d = AW_IDLE;
                 end
             end
@@ -381,18 +469,6 @@ module axi_riscv_lrsc #(
         .oup_data_o     (art_clr_addr),
         .oup_valid_o    (art_clr_req),
         .oup_ready_i    (art_clr_gnt)
-    );
-
-    // **Do not remove!**  This fixes a bug in questasim by decoupling the Interface ports from the
-    // internal signals.  Setting the signals of the interface directly can lead to infinite loops
-    // between always_comb blocks in modelsim.
-    axi_join i_axi_join_mst (
-        .in     ( mst      ),
-        .out    ( mst_port )
-    );
-    axi_join i_axi_join_slv (
-        .in     ( slv_port ),
-        .out    ( slv      )
     );
 
     // Registers

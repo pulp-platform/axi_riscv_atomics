@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 
 ## Unreleased
 
+### Changed
+- Made SystemVerilog interfaces optional.  Top-level modules now expose a flattened port list, and
+  an optional wrapper provides SystemVerilog interfaces.  This improves compatibility with tools
+  that have poor support for SystemVerilog interfaces.
+
 ## Fixed
 - `axi_riscv_amos`: Fixed burst, lock, and size of ARs.
 

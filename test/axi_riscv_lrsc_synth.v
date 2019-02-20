@@ -128,7 +128,7 @@ module axi_riscv_lrsc_synth #(
     input                          mst_b_valid_i
 );
 
-    axi_riscv_lrsc_wrap #(
+    axi_riscv_lrsc #(
         .ADDR_BEGIN         (ADDR_BEGIN),
         .ADDR_END           (ADDR_END),
         .AXI_ADDR_WIDTH     (AXI_ADDR_WIDTH),

@@ -131,7 +131,7 @@ module axi_riscv_atomics_synth #(
     input                          mst_b_valid_i
 );
 
-    axi_riscv_atomics_wrap #(
+    axi_riscv_atomics #(
         .AXI_ADDR_WIDTH     (AXI_ADDR_WIDTH),
         .AXI_DATA_WIDTH     (AXI_DATA_WIDTH),
         .AXI_ID_WIDTH       (AXI_ID_WIDTH),
