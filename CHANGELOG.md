@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 
 ### Added
 - Added simple standalone synthesis bench for `axi_riscv_atomics`.
+- Added simple standalone synthesis bench for `axi_riscv_lrsc`.
 
 ## v0.1.0 - 2019-02-19
 
