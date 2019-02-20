@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 ## Unreleased
 
 ### Fixed
+- `axi_res_tbl`: Fixed assignments in `always_ff` process.
 - `axi_riscv_amos`: Removed unused register.
 - `axi_riscv_amos`: Added missing default assignments in AW FSM.
 - `axi_riscv_amos`: Fixed sign extension of 32bit AMOs on 64bit ALU.

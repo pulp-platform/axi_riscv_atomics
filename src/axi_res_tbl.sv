@@ -72,9 +72,9 @@ module axi_res_tbl #(
     // Registers
     always_ff @(posedge clk_i, negedge rst_ni) begin
         if (~rst_ni) begin
-            tbl_q   = '0;
+            tbl_q   <= '0;
         end else begin
-            tbl_q   = tbl_d;
+            tbl_q   <= tbl_d;
         end
     end
 
