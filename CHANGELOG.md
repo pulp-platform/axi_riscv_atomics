@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 
 ## Unreleased
 
+## v0.1.1 - 2019-02-20
+
 ### Fixed
 - `axi_res_tbl`: Fixed assignments in `always_ff` process.
 - `axi_riscv_amos`: Removed unused register.
