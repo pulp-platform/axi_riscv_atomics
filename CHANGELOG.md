@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 ## Unreleased
 
 ### Fixed
+- axi_riscv_amos: Removed unused register.
+- axi_riscv_amos: Added missing default assignments in AW FSM.
 - axi_riscv_atomics_wrap: Fixed syntax of interface signal assignments.
 - axi_riscv_lrsc: Added missing feedthrough of `aw_atop`.
 
