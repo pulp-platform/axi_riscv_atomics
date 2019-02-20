@@ -80,12 +80,6 @@ module axi_riscv_amos #(
     logic                               data_valid_d, data_valid_q;
 
     logic                               read_done_d, read_done_q;
-    logic                               atop_req_in;
-    logic                               valid_atop_req_in;
-    logic                               invalid_atop_req_in;
-    logic                               valid_atop_req_cu;
-    logic                               invalid_atop_req_cu;
-
     logic                               adapter_ready;
 
     logic [RISCV_WORD_WIDTH-1:0]    alu_operand_a;
