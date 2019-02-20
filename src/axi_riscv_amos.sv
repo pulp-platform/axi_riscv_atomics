@@ -861,10 +861,26 @@ module axi_riscv_amos #(
     assign alu_result_ext = res;
 
     generate
-        if (AXI_ALU_RATIO == 1) begin
+        if (AXI_ALU_RATIO == 1 && RISCV_WORD_WIDTH == 32) begin
             assign alu_operand_a  = op_a;
             assign alu_operand_b  = op_b;
             assign res            = alu_result;
+        end else if (AXI_ALU_RATIO == 1 && RISCV_WORD_WIDTH == 64) begin
+            assign res        = alu_result;
+            always_comb begin
+                op_a_sign_ext = op_a | ({AXI_ALU_RATIO*RISCV_WORD_WIDTH{sign_a}} & ~strb_ext);
+                op_b_sign_ext = op_b | ({AXI_ALU_RATIO*RISCV_WORD_WIDTH{sign_b}} & ~strb_ext);
+
+                if (atop_q[2:0] == axi_pkg::ATOP_SMAX || atop_q[2:0] == axi_pkg::ATOP_SMIN) begin
+                    // Sign extend
+                    alu_operand_a = op_a_sign_ext;
+                    alu_operand_b = op_b_sign_ext;
+                end else begin
+                    // No sign extension necessary
+                    alu_operand_a = op_a;
+                    alu_operand_b = op_b;
+                end
+            end
         end else begin
             always_comb begin
                 op_a_sign_ext = op_a | ({AXI_ALU_RATIO*RISCV_WORD_WIDTH{sign_a}} & ~strb_ext);
