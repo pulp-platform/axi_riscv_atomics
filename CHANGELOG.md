@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 - axi_riscv_amos: Added missing default assignments in AW FSM.
 - axi_riscv_atomics_wrap: Fixed syntax of interface signal assignments.
 - axi_riscv_lrsc: Added missing feedthrough of `aw_atop`.
+- axi_riscv_lrsc_wrap: Fixed syntax of interface signal assignments.
 
 ### Added
 - Added simple standalone synthesis bench for `axi_riscv_atomics`.

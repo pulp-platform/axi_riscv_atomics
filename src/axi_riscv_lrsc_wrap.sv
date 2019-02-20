@@ -139,57 +139,57 @@ module axi_riscv_lrsc_wrap #(
         .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
         .AXI_ID_WIDTH   (AXI_ID_WIDTH),
         .AXI_USER_WIDTH (AXI_USER_WIDTH)
-    ) int_slv (
-        aw_addr(slv_aw_addr_i),
-        aw_prot(slv_aw_prot_i),
-        aw_atop(slv_aw_atop_i),
-        aw_region(slv_aw_region_i),
-        aw_len(slv_aw_len_i),
-        aw_size(slv_aw_size_i),
-        aw_burst(slv_aw_burst_i),
-        aw_lock(slv_aw_lock_i),
-        aw_cache(slv_aw_cache_i),
-        aw_qos(slv_aw_qos_i),
-        aw_id(slv_aw_id_i),
-        aw_user(slv_aw_user_i),
-        aw_ready(slv_aw_ready_o),
-        aw_valid(slv_aw_valid_i),
+    ) int_slv ();
 
-        ar_addr(slv_ar_addr_i),
-        ar_prot(slv_ar_prot_i),
-        ar_region(slv_ar_region_i),
-        ar_len(slv_ar_len_i),
-        ar_size(slv_ar_size_i),
-        ar_burst(slv_ar_burst_i),
-        ar_lock(slv_ar_lock_i),
-        ar_cache(slv_ar_cache_i),
-        ar_qos(slv_ar_qos_i),
-        ar_id(slv_ar_id_i),
-        ar_user(slv_ar_user_i),
-        ar_ready(slv_ar_ready_o),
-        ar_valid(slv_ar_valid_i),
+    assign int_slv.aw_addr = slv_aw_addr_i;
+    assign int_slv.aw_prot = slv_aw_prot_i;
+    assign int_slv.aw_region = slv_aw_region_i;
+    assign int_slv.aw_atop = slv_aw_atop_i;
+    assign int_slv.aw_len = slv_aw_len_i;
+    assign int_slv.aw_size = slv_aw_size_i;
+    assign int_slv.aw_burst = slv_aw_burst_i;
+    assign int_slv.aw_lock = slv_aw_lock_i;
+    assign int_slv.aw_cache = slv_aw_cache_i;
+    assign int_slv.aw_qos = slv_aw_qos_i;
+    assign int_slv.aw_id = slv_aw_id_i;
+    assign int_slv.aw_user = slv_aw_user_i;
+    assign slv_aw_ready_o = int_slv.aw_ready;
+    assign int_slv.aw_valid = slv_aw_valid_i;
 
-        w_valid(slv_w_valid_i),
-        w_data(slv_w_data_i),
-        w_strb(slv_w_strb_i),
-        w_user(slv_w_user_i),
-        w_last(slv_w_last_i),
-        w_ready(slv_w_ready_o),
+    assign int_slv.ar_addr = slv_ar_addr_i;
+    assign int_slv.ar_prot = slv_ar_prot_i;
+    assign int_slv.ar_region = slv_ar_region_i;
+    assign int_slv.ar_len = slv_ar_len_i;
+    assign int_slv.ar_size = slv_ar_size_i;
+    assign int_slv.ar_burst = slv_ar_burst_i;
+    assign int_slv.ar_lock = slv_ar_lock_i;
+    assign int_slv.ar_cache = slv_ar_cache_i;
+    assign int_slv.ar_qos = slv_ar_qos_i;
+    assign int_slv.ar_id = slv_ar_id_i;
+    assign int_slv.ar_user = slv_ar_user_i;
+    assign slv_ar_ready_o = int_slv.ar_ready;
+    assign int_slv.ar_valid = slv_ar_valid_i;
 
-        r_data(slv_r_data_o),
-        r_resp(slv_r_resp_o),
-        r_last(slv_r_last_o),
-        r_id(slv_r_id_o),
-        r_user(slv_r_user_o),
-        r_ready(slv_r_ready_i),
-        r_valid(slv_r_valid_o),
+    assign int_slv.w_valid = slv_w_valid_i;
+    assign int_slv.w_data = slv_w_data_i;
+    assign int_slv.w_strb = slv_w_strb_i;
+    assign int_slv.w_user = slv_w_user_i;
+    assign int_slv.w_last = slv_w_last_i;
+    assign slv_w_ready_o = int_slv.w_ready;
 
-        b_resp(slv_b_resp_o),
-        b_id(slv_b_id_o),
-        b_user(slv_b_user_o),
-        b_ready(slv_b_ready_i),
-        b_valid(slv_b_valid_o)
-    );
+    assign slv_r_data_o = int_slv.r_data;
+    assign slv_r_resp_o = int_slv.r_resp;
+    assign slv_r_last_o = int_slv.r_last;
+    assign slv_r_id_o = int_slv.r_id;
+    assign slv_r_user_o = int_slv.r_user;
+    assign int_slv.r_ready = slv_r_ready_i;
+    assign slv_r_valid_o = int_slv.r_valid;
+
+    assign slv_b_resp_o = int_slv.b_resp;
+    assign slv_b_id_o = int_slv.b_id;
+    assign slv_b_user_o = int_slv.b_user;
+    assign int_slv.b_ready = slv_b_ready_i;
+    assign slv_b_valid_o = int_slv.b_valid;
 
     // Internal Master
     AXI_BUS #(
@@ -197,57 +197,57 @@ module axi_riscv_lrsc_wrap #(
         .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
         .AXI_ID_WIDTH   (AXI_ID_WIDTH),
         .AXI_USER_WIDTH (AXI_USER_WIDTH)
-    ) int_mst (
-        aw_addr(mst_aw_addr_o),
-        aw_prot(mst_aw_prot_o),
-        aw_region(mst_aw_region_o),
-        aw_atop(mst_aw_atop_o),
-        aw_len(mst_aw_len_o),
-        aw_size(mst_aw_size_o),
-        aw_burst(mst_aw_burst_o),
-        aw_lock(mst_aw_lock_o),
-        aw_cache(mst_aw_cache_o),
-        aw_qos(mst_aw_qos_o),
-        aw_id(mst_aw_id_o),
-        aw_user(mst_aw_user_o),
-        aw_ready(mst_aw_ready_i),
-        aw_valid(mst_aw_valid_o),
+    ) int_mst ();
 
-        ar_addr(mst_ar_addr_o),
-        ar_prot(mst_ar_prot_o),
-        ar_region(mst_ar_region_o),
-        ar_len(mst_ar_len_o),
-        ar_size(mst_ar_size_o),
-        ar_burst(mst_ar_burst_o),
-        ar_lock(mst_ar_lock_o),
-        ar_cache(mst_ar_cache_o),
-        ar_qos(mst_ar_qos_o),
-        ar_id(mst_ar_id_o),
-        ar_user(mst_ar_user_o),
-        ar_ready(mst_ar_ready_i),
-        ar_valid(mst_ar_valid_o),
+    assign mst_aw_addr_o = int_mst.aw_addr;
+    assign mst_aw_prot_o = int_mst.aw_prot;
+    assign mst_aw_region_o = int_mst.aw_region;
+    assign mst_aw_atop_o = int_mst.aw_atop;
+    assign mst_aw_len_o = int_mst.aw_len;
+    assign mst_aw_size_o = int_mst.aw_size;
+    assign mst_aw_burst_o = int_mst.aw_burst;
+    assign mst_aw_lock_o = int_mst.aw_lock;
+    assign mst_aw_cache_o = int_mst.aw_cache;
+    assign mst_aw_qos_o = int_mst.aw_qos;
+    assign mst_aw_id_o = int_mst.aw_id;
+    assign mst_aw_user_o = int_mst.aw_user;
+    assign int_mst.aw_ready = mst_aw_ready_i;
+    assign mst_aw_valid_o = int_mst.aw_valid;
 
-        w_valid(mst_w_valid_o),
-        w_data(mst_w_data_o),
-        w_strb(mst_w_strb_o),
-        w_user(mst_w_user_o),
-        w_last(mst_w_last_o),
-        w_ready(mst_w_ready_i),
+    assign mst_ar_addr_o = int_mst.ar_addr;
+    assign mst_ar_prot_o = int_mst.ar_prot;
+    assign mst_ar_region_o = int_mst.ar_region;
+    assign mst_ar_len_o = int_mst.ar_len;
+    assign mst_ar_size_o = int_mst.ar_size;
+    assign mst_ar_burst_o = int_mst.ar_burst;
+    assign mst_ar_lock_o = int_mst.ar_lock;
+    assign mst_ar_cache_o = int_mst.ar_cache;
+    assign mst_ar_qos_o = int_mst.ar_qos;
+    assign mst_ar_id_o = int_mst.ar_id;
+    assign mst_ar_user_o = int_mst.ar_user;
+    assign int_mst.ar_ready = mst_ar_ready_i;
+    assign mst_ar_valid_o = int_mst.ar_valid;
 
-        r_data(mst_r_data_i),
-        r_resp(mst_r_resp_i),
-        r_last(mst_r_last_i),
-        r_id(mst_r_id_i),
-        r_user(mst_r_user_i),
-        r_ready(mst_r_ready_o),
-        r_valid(mst_r_valid_i),
+    assign mst_w_valid_o = int_mst.w_valid;
+    assign mst_w_data_o = int_mst.w_data;
+    assign mst_w_strb_o = int_mst.w_strb;
+    assign mst_w_user_o = int_mst.w_user;
+    assign mst_w_last_o = int_mst.w_last;
+    assign int_mst.w_ready = mst_w_ready_i;
 
-        b_resp(mst_b_resp_i),
-        b_id(mst_b_id_i),
-        b_user(mst_b_user_i),
-        b_ready(mst_b_ready_o),
-        b_valid(mst_b_valid_i)
-    );
+    assign int_mst.r_data = mst_r_data_i;
+    assign int_mst.r_resp = mst_r_resp_i;
+    assign int_mst.r_last = mst_r_last_i;
+    assign int_mst.r_id = mst_r_id_i;
+    assign int_mst.r_user = mst_r_user_i;
+    assign mst_r_ready_o = int_mst.r_ready;
+    assign int_mst.r_valid = mst_r_valid_i;
+
+    assign int_mst.b_resp = mst_b_resp_i;
+    assign int_mst.b_id = mst_b_id_i;
+    assign int_mst.b_user = mst_b_user_i;
+    assign mst_b_ready_o = int_mst.b_ready;
+    assign int_mst.b_valid = mst_b_valid_i;
 
     axi_riscv_lrsc #(
         .ADDR_BEGIN     (ADDR_BEGIN),
