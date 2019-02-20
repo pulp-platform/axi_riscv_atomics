@@ -631,8 +631,8 @@ module axi_riscv_amos #(
         mst.ar_qos    = slv.ar_qos;
         mst.ar_region = slv.ar_region;
         mst.ar_user   = slv.ar_user;
-        mst.ar_valid  = 1'b0;
-        slv.ar_ready  = 1'b0;
+        mst.ar_valid  = slv.ar_valid;
+        slv.ar_ready  = mst.ar_ready;
 
         // State Machine
         ar_state_d  = ar_state_q;
@@ -640,10 +640,6 @@ module axi_riscv_amos #(
         unique case (ar_state_q)
 
             FEEDTHROUGH_AR: begin
-                // Feed through
-                mst.ar_valid  = slv.ar_valid;
-                slv.ar_ready  = mst.ar_ready;
-
                 if (adapter_ready) begin
                     if (atop_valid_d == VALID | atop_valid_d == STORE) begin
                         if (slv.ar_valid) begin
@@ -672,11 +668,13 @@ module axi_riscv_amos #(
             WAIT_AR: begin
                 // Issue read request
                 if (ar_free) begin
+                    // Acquire channel
+                    slv.ar_ready  = 1'b0;
                     // Inject read request
                     mst.ar_addr  = addr_q;
                     mst.ar_id    = id_q;
                     mst.ar_len   = 8'h00;
-                    mst.ar_size  = slv.aw_size;
+                    mst.ar_size  = size_q;
                     mst.ar_burst = 2'b00;
                     mst.ar_lock  = 1'h0;
                     mst.ar_valid = 1'b1;
@@ -687,18 +685,19 @@ module axi_riscv_amos #(
                         // Hold read request
                         ar_state_d = REQ_AR;
                     end
-                end else begin
-                    // Wait until AR is free
-                    mst.ar_valid  = slv.ar_valid;
-                    slv.ar_ready  = mst.ar_ready;
                 end
             end // WAIT_AR
 
             REQ_AR: begin
+                // Acquire channel
+                slv.ar_ready  = 1'b0;
                 // Inject read request
                 mst.ar_addr  = addr_q;
                 mst.ar_id    = id_q;
                 mst.ar_len   = 8'h00;
+                mst.ar_size  = size_q;
+                mst.ar_burst = 2'b00;
+                mst.ar_lock  = 1'h0;
                 mst.ar_valid = 1'b1;
                 if (mst.ar_ready) begin
                     // Request acknowledged
