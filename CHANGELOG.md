@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 
 ## Unreleased
 
+## v0.2.0 - 2019-02-21
+
 ### Changed
 - Made SystemVerilog interfaces optional.  Top-level modules now expose a flattened port list, and
   an optional wrapper provides SystemVerilog interfaces.  This improves compatibility with tools
