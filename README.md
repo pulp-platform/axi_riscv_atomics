@@ -26,4 +26,4 @@ adherence to a cache coherency protocol).  Choose depending on your needs:
   memory accesses.
 
 For each of those modules we additionally provide a wrapper (`_wrap` filename suffix) that exposes
-SystemVerilog `logic` ports instead of interfaces.
+SystemVerilog interfaces instead of `logic` ports.

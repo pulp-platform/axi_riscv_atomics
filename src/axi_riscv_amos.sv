@@ -31,17 +31,118 @@ module axi_riscv_amos #(
     // Word width of the widest RISC-V processor that can issue requests to this module.
     // 32 for RV32; 64 for RV64, where both 32-bit (.W suffix) and 64-bit (.D suffix) AMOs are
     // supported if `aw_strb` is set correctly.
-    parameter int unsigned RISCV_WORD_WIDTH     = 0
+    parameter int unsigned RISCV_WORD_WIDTH     = 0,
+    /// Derived Parameters (do NOT change manually!)
+    localparam int unsigned AXI_STRB_WIDTH      = AXI_DATA_WIDTH / 8
 ) (
-    input  logic    clk_i,
-    input  logic    rst_ni,
-    AXI_BUS.Master  mst_port,
-    AXI_BUS.Slave   slv_port
+    input  logic                        clk_i,
+    input  logic                        rst_ni,
+
+    /// Slave Interface
+    input  logic [AXI_ADDR_WIDTH-1:0]   slv_aw_addr_i,
+    input  logic [2:0]                  slv_aw_prot_i,
+    input  logic [3:0]                  slv_aw_region_i,
+    input  logic [5:0]                  slv_aw_atop_i,
+    input  logic [7:0]                  slv_aw_len_i,
+    input  logic [2:0]                  slv_aw_size_i,
+    input  logic [1:0]                  slv_aw_burst_i,
+    input  logic                        slv_aw_lock_i,
+    input  logic [3:0]                  slv_aw_cache_i,
+    input  logic [3:0]                  slv_aw_qos_i,
+    input  logic [AXI_ID_WIDTH-1:0]     slv_aw_id_i,
+    input  logic [AXI_USER_WIDTH-1:0]   slv_aw_user_i,
+    output logic                        slv_aw_ready_o,
+    input  logic                        slv_aw_valid_i,
+
+    input  logic [AXI_ADDR_WIDTH-1:0]   slv_ar_addr_i,
+    input  logic [2:0]                  slv_ar_prot_i,
+    input  logic [3:0]                  slv_ar_region_i,
+    input  logic [7:0]                  slv_ar_len_i,
+    input  logic [2:0]                  slv_ar_size_i,
+    input  logic [1:0]                  slv_ar_burst_i,
+    input  logic                        slv_ar_lock_i,
+    input  logic [3:0]                  slv_ar_cache_i,
+    input  logic [3:0]                  slv_ar_qos_i,
+    input  logic [AXI_ID_WIDTH-1:0]     slv_ar_id_i,
+    input  logic [AXI_USER_WIDTH-1:0]   slv_ar_user_i,
+    output logic                        slv_ar_ready_o,
+    input  logic                        slv_ar_valid_i,
+
+    input  logic [AXI_DATA_WIDTH-1:0]   slv_w_data_i,
+    input  logic [AXI_STRB_WIDTH-1:0]   slv_w_strb_i,
+    input  logic [AXI_USER_WIDTH-1:0]   slv_w_user_i,
+    input  logic                        slv_w_last_i,
+    output logic                        slv_w_ready_o,
+    input  logic                        slv_w_valid_i,
+
+    output logic [AXI_DATA_WIDTH-1:0]   slv_r_data_o,
+    output logic [1:0]                  slv_r_resp_o,
+    output logic                        slv_r_last_o,
+    output logic [AXI_ID_WIDTH-1:0]     slv_r_id_o,
+    output logic [AXI_USER_WIDTH-1:0]   slv_r_user_o,
+    input  logic                        slv_r_ready_i,
+    output logic                        slv_r_valid_o,
+
+    output logic [1:0]                  slv_b_resp_o,
+    output logic [AXI_ID_WIDTH-1:0]     slv_b_id_o,
+    output logic [AXI_USER_WIDTH-1:0]   slv_b_user_o,
+    input  logic                        slv_b_ready_i,
+    output logic                        slv_b_valid_o,
+
+    /// Master Interface
+    output logic [AXI_ADDR_WIDTH-1:0]   mst_aw_addr_o,
+    output logic [2:0]                  mst_aw_prot_o,
+    output logic [3:0]                  mst_aw_region_o,
+    output logic [5:0]                  mst_aw_atop_o,
+    output logic [7:0]                  mst_aw_len_o,
+    output logic [2:0]                  mst_aw_size_o,
+    output logic [1:0]                  mst_aw_burst_o,
+    output logic                        mst_aw_lock_o,
+    output logic [3:0]                  mst_aw_cache_o,
+    output logic [3:0]                  mst_aw_qos_o,
+    output logic [AXI_ID_WIDTH-1:0]     mst_aw_id_o,
+    output logic [AXI_USER_WIDTH-1:0]   mst_aw_user_o,
+    input  logic                        mst_aw_ready_i,
+    output logic                        mst_aw_valid_o,
+
+    output logic [AXI_ADDR_WIDTH-1:0]   mst_ar_addr_o,
+    output logic [2:0]                  mst_ar_prot_o,
+    output logic [3:0]                  mst_ar_region_o,
+    output logic [7:0]                  mst_ar_len_o,
+    output logic [2:0]                  mst_ar_size_o,
+    output logic [1:0]                  mst_ar_burst_o,
+    output logic                        mst_ar_lock_o,
+    output logic [3:0]                  mst_ar_cache_o,
+    output logic [3:0]                  mst_ar_qos_o,
+    output logic [AXI_ID_WIDTH-1:0]     mst_ar_id_o,
+    output logic [AXI_USER_WIDTH-1:0]   mst_ar_user_o,
+    input  logic                        mst_ar_ready_i,
+    output logic                        mst_ar_valid_o,
+
+    output logic [AXI_DATA_WIDTH-1:0]   mst_w_data_o,
+    output logic [AXI_STRB_WIDTH-1:0]   mst_w_strb_o,
+    output logic [AXI_USER_WIDTH-1:0]   mst_w_user_o,
+    output logic                        mst_w_last_o,
+    input  logic                        mst_w_ready_i,
+    output logic                        mst_w_valid_o,
+
+    input  logic [AXI_DATA_WIDTH-1:0]   mst_r_data_i,
+    input  logic [1:0]                  mst_r_resp_i,
+    input  logic                        mst_r_last_i,
+    input  logic [AXI_ID_WIDTH-1:0]     mst_r_id_i,
+    input  logic [AXI_USER_WIDTH-1:0]   mst_r_user_i,
+    output logic                        mst_r_ready_o,
+    input  logic                        mst_r_valid_i,
+
+    input  logic [1:0]                  mst_b_resp_i,
+    input  logic [AXI_ID_WIDTH-1:0]     mst_b_id_i,
+    input  logic [AXI_USER_WIDTH-1:0]   mst_b_user_i,
+    output logic                        mst_b_ready_o,
+    input  logic                        mst_b_valid_i
 );
 
     localparam int unsigned OUTSTND_BURSTS_WIDTH = $clog2(AXI_MAX_WRITE_TXNS+1);
     localparam int unsigned AXI_ALU_RATIO        = AXI_DATA_WIDTH/RISCV_WORD_WIDTH;
-    localparam int unsigned AXI_STRB_WIDTH       = AXI_DATA_WIDTH/8;
 
     // State types
     typedef enum logic [1:0] { FEEDTHROUGH_AW, WAIT_ALU, WAIT_AW, REQ_AW } aw_state_t;
@@ -125,16 +226,16 @@ module axi_riscv_amos #(
             r_valid  <= 0;
             r_ready  <= 0;
         end else begin
-            aw_valid <= mst.aw_valid;
-            aw_ready <= mst.aw_ready;
-            w_valid  <= mst.w_valid;
-            w_ready  <= mst.w_ready;
-            b_valid  <= slv.b_valid;
-            b_ready  <= slv.b_ready;
-            ar_valid <= mst.ar_valid;
-            ar_ready <= mst.ar_ready;
-            r_valid  <= slv.r_valid;
-            r_ready  <= slv.r_ready;
+            aw_valid <= mst_aw_valid_o;
+            aw_ready <= mst_aw_ready_i;
+            w_valid  <= mst_w_valid_o;
+            w_ready  <= mst_w_ready_i;
+            b_valid  <= slv_b_valid_o;
+            b_ready  <= slv_b_ready_i;
+            ar_valid <= mst_ar_valid_o;
+            ar_ready <= mst_ar_ready_i;
+            r_valid  <= slv_r_valid_o;
+            r_ready  <= slv_r_ready_i;
         end
     end
 
@@ -143,32 +244,32 @@ module axi_riscv_amos #(
     // TODO Bursts need special treatment
     // TODO Some memory controller round the address down
     logic transaction_collision;
-    assign transaction_collision = (slv.aw_addr < (     addr_q + (8'h01 <<      size_q))) &
-                                   (     addr_q < (slv.aw_addr + (8'h01 << slv.aw_size)));
+    assign transaction_collision = (slv_aw_addr_i < (     addr_q + (8'h01 <<      size_q))) &
+                                   (     addr_q < (slv_aw_addr_i + (8'h01 << slv_aw_size_i)));
 
     always_comb begin : calc_atop_valid
         atop_valid_d = atop_valid_q;
         if (adapter_ready) begin
             atop_valid_d = NONE;
-            if (slv.aw_valid && slv.aw_atop) begin
+            if (slv_aw_valid_i && slv_aw_atop_i) begin
                 // Default is invalid request
                 atop_valid_d = INVALID;
                 // Valid load operation
-                if ((slv.aw_atop      ==  axi_pkg::ATOP_ATOMICSWAP) ||
-                    (slv.aw_atop[5:3] == {axi_pkg::ATOP_ATOMICLOAD , axi_pkg::ATOP_LITTLE_END})) begin
+                if ((slv_aw_atop_i      ==  axi_pkg::ATOP_ATOMICSWAP) ||
+                    (slv_aw_atop_i[5:3] == {axi_pkg::ATOP_ATOMICLOAD , axi_pkg::ATOP_LITTLE_END})) begin
                     atop_valid_d = VALID;
                 end
                 // Valid store operation
-                if (slv.aw_atop[5:3] == {axi_pkg::ATOP_ATOMICSTORE, axi_pkg::ATOP_LITTLE_END}) begin
+                if (slv_aw_atop_i[5:3] == {axi_pkg::ATOP_ATOMICSTORE, axi_pkg::ATOP_LITTLE_END}) begin
                     atop_valid_d = STORE;
                 end
                 // Invalidate valid request if control signals do not match
                 // Burst or exclusive access
-                if (slv.aw_len | slv.aw_lock) begin
+                if (slv_aw_len_i | slv_aw_lock_i) begin
                     atop_valid_d = INVALID;
                 end
                 // Unsupported size
-                if (slv.aw_size > $clog2(RISCV_WORD_WIDTH/8)) begin
+                if (slv_aw_size_i > $clog2(RISCV_WORD_WIDTH/8)) begin
                     atop_valid_d = INVALID;
                 end
             end
@@ -194,18 +295,18 @@ module axi_riscv_amos #(
 
     always_comb begin : axi_aw_channel
         // Defaults
-        mst.aw_id     = slv.aw_id;
-        mst.aw_addr   = slv.aw_addr;
-        mst.aw_len    = slv.aw_len;
-        mst.aw_size   = slv.aw_size;
-        mst.aw_burst  = slv.aw_burst;
-        mst.aw_lock   = slv.aw_lock;
-        mst.aw_cache  = slv.aw_cache;
-        mst.aw_prot   = slv.aw_prot;
-        mst.aw_qos    = slv.aw_qos;
-        mst.aw_region = slv.aw_region;
-        mst.aw_atop   = 6'b0;
-        mst.aw_user   = slv.aw_user;
+        mst_aw_id_o     = slv_aw_id_i;
+        mst_aw_addr_o   = slv_aw_addr_i;
+        mst_aw_len_o    = slv_aw_len_i;
+        mst_aw_size_o   = slv_aw_size_i;
+        mst_aw_burst_o  = slv_aw_burst_i;
+        mst_aw_lock_o   = slv_aw_lock_i;
+        mst_aw_cache_o  = slv_aw_cache_i;
+        mst_aw_prot_o   = slv_aw_prot_i;
+        mst_aw_qos_o    = slv_aw_qos_i;
+        mst_aw_region_o = slv_aw_region_i;
+        mst_aw_atop_o   = 6'b0;
+        mst_aw_user_o   = slv_aw_user_i;
         // Non-AXI signals
         addr_d       = addr_q;
         id_d         = id_q;
@@ -222,52 +323,52 @@ module axi_riscv_amos #(
 
         // Default control
         // Make sure the outstanding beats counter does not overflow
-        if (w_cnt_q == AXI_MAX_WRITE_TXNS || (slv.aw_valid && slv.aw_atop)) begin
+        if (w_cnt_q == AXI_MAX_WRITE_TXNS || (slv_aw_valid_i && slv_aw_atop_i)) begin
             // Block if counter is overflowing or atomic request
-            mst.aw_valid = 1'b0;
-            slv.aw_ready = 1'b0;
-        end else if (slv.aw_valid && transaction_collision && !adapter_ready) begin
+            mst_aw_valid_o = 1'b0;
+            slv_aw_ready_o = 1'b0;
+        end else if (slv_aw_valid_i && transaction_collision && !adapter_ready) begin
             // Block requests to the same address as current atomic transaction
-            mst.aw_valid = 1'b0;
-            slv.aw_ready = 1'b0;
+            mst_aw_valid_o = 1'b0;
+            slv_aw_ready_o = 1'b0;
         end else begin
             // Forward
-            mst.aw_valid  = slv.aw_valid;
-            slv.aw_ready  = mst.aw_ready;
+            mst_aw_valid_o  = slv_aw_valid_i;
+            slv_aw_ready_o  = mst_aw_ready_i;
         end
 
         unique case (aw_state_q)
 
             FEEDTHROUGH_AW: begin
                 // Feedthrough slave to master until atomic operation is detected
-                if (slv.aw_valid && slv.aw_atop) begin
+                if (slv_aw_valid_i && slv_aw_atop_i) begin
                     // Do not forward
-                    mst.aw_valid = 1'b0;
+                    mst_aw_valid_o = 1'b0;
                     if (adapter_ready) begin
                         // Acknowledge atomic transaction
-                        slv.aw_ready = 1'b1;
+                        slv_aw_ready_o = 1'b1;
                         // Remember request
-                        atop_d   = slv.aw_atop;
-                        addr_d   = slv.aw_addr;
-                        id_d     = slv.aw_id;
-                        size_d   = slv.aw_size;
-                        cache_d  = slv.aw_cache;
-                        prot_d   = slv.aw_prot;
-                        qos_d    = slv.aw_qos;
-                        region_d = slv.aw_region;
-                        user_d   = slv.aw_user;
+                        atop_d   = slv_aw_atop_i;
+                        addr_d   = slv_aw_addr_i;
+                        id_d     = slv_aw_id_i;
+                        size_d   = slv_aw_size_i;
+                        cache_d  = slv_aw_cache_i;
+                        prot_d   = slv_aw_prot_i;
+                        qos_d    = slv_aw_qos_i;
+                        region_d = slv_aw_region_i;
+                        user_d   = slv_aw_user_i;
                         // Go to next state
                         if (atop_valid_d != INVALID) begin
                             aw_state_d = WAIT_ALU;
                         end
                     end else begin
                         // Block request
-                        slv.aw_ready  = 1'b0;
+                        slv_aw_ready_o  = 1'b0;
                     end
                 end
 
                 // Keep counting the W beats
-                if (w_cnt_inj_q && mst.w_valid && mst.w_ready && mst.w_last) begin
+                if (w_cnt_inj_q && mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
                     w_cnt_inj_d = w_cnt_inj_q - 1;
                 end
             end // FEEDTHROUGH_AW
@@ -279,28 +380,28 @@ module axi_riscv_amos #(
                     // Check if AW channel is free
                     if (aw_free) begin
                         // Block
-                        slv.aw_ready = 1'b0;
+                        slv_aw_ready_o  = 1'b0;
                         // Make write request
-                        mst.aw_valid  = 1'b1;
-                        mst.aw_addr   = addr_q;
-                        mst.aw_len    = 8'h00;
-                        mst.aw_id     = id_q;
-                        mst.aw_size   = size_q;
-                        mst.aw_burst  = 2'b00;
-                        mst.aw_lock   = 1'b0;
-                        mst.aw_cache  = cache_q;
-                        mst.aw_prot   = prot_q;
-                        mst.aw_qos    = qos_q;
-                        mst.aw_region = region_q;
-                        mst.aw_user   = user_q;
+                        mst_aw_valid_o  = 1'b1;
+                        mst_aw_addr_o   = addr_q;
+                        mst_aw_len_o    = 8'h00;
+                        mst_aw_id_o     = id_q;
+                        mst_aw_size_o   = size_q;
+                        mst_aw_burst_o  = 2'b00;
+                        mst_aw_lock_o   = 1'b0;
+                        mst_aw_cache_o  = cache_q;
+                        mst_aw_prot_o   = prot_q;
+                        mst_aw_qos_o    = qos_q;
+                        mst_aw_region_o = region_q;
+                        mst_aw_user_o   = user_q;
                         // Remember outstanding beats before injected request
-                        if (mst.w_valid && mst.w_ready && mst.w_last) begin
+                        if (mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
                             w_cnt_inj_d = w_cnt_q - 1;
                         end else begin
                             w_cnt_inj_d = w_cnt_q;
                         end
                         // Check if request is acknowledged
-                        if (mst.aw_ready) begin
+                        if (mst_aw_ready_i) begin
                             aw_state_d = FEEDTHROUGH_AW;
                         end else begin
                             aw_state_d = REQ_AW;
@@ -312,25 +413,25 @@ module axi_riscv_amos #(
 
             REQ_AW: begin
                 // Block
-                slv.aw_ready = 1'b0;
+                slv_aw_ready_o  = 1'b0;
                 // Hold write request
-                mst.aw_valid  = 1'b1;
-                mst.aw_addr   = addr_q;
-                mst.aw_len    = 8'h00;
-                mst.aw_id     = id_q;
-                mst.aw_size   = size_q;
-                mst.aw_burst  = 2'b00;
-                mst.aw_lock   = 1'b0;
-                mst.aw_cache  = cache_q;
-                mst.aw_prot   = prot_q;
-                mst.aw_qos    = qos_q;
-                mst.aw_region = region_q;
-                mst.aw_user   = user_q;
-                if (mst.aw_ready) begin
+                mst_aw_valid_o  = 1'b1;
+                mst_aw_addr_o   = addr_q;
+                mst_aw_len_o    = 8'h00;
+                mst_aw_id_o     = id_q;
+                mst_aw_size_o   = size_q;
+                mst_aw_burst_o  = 2'b00;
+                mst_aw_lock_o   = 1'b0;
+                mst_aw_cache_o  = cache_q;
+                mst_aw_prot_o   = prot_q;
+                mst_aw_qos_o    = qos_q;
+                mst_aw_region_o = region_q;
+                mst_aw_user_o   = user_q;
+                if (mst_aw_ready_i) begin
                     aw_state_d = FEEDTHROUGH_AW;
                 end
                 // Keep counting the W beats
-                if (w_cnt_inj_q && mst.w_valid && mst.w_ready && mst.w_last) begin
+                if (w_cnt_inj_q && mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
                     w_cnt_inj_d = w_cnt_inj_q - 1;
                 end
             end // REQ_AW
@@ -347,10 +448,10 @@ module axi_riscv_amos #(
 
     always_comb begin : axi_w_channel
         // Defaults
-        mst.w_data   = slv.w_data;
-        mst.w_strb   = slv.w_strb;
-        mst.w_last   = slv.w_last;
-        mst.w_user   = slv.w_user;
+        mst_w_data_o = slv_w_data_i;
+        mst_w_strb_o = slv_w_strb_i;
+        mst_w_last_o = slv_w_last_i;
+        mst_w_user_o = slv_w_user_i;
         // Non-AXI signals
         strb_d       = strb_q;
         atop_data_d  = atop_data_q;
@@ -364,11 +465,11 @@ module axi_riscv_amos #(
         // Make sure no data is sent without knowing if it's atomic
         if (w_cnt_q == 0) begin
             // Stall W as it precedes the AW request
-            slv.w_ready = 1'b0;
-            mst.w_valid = 1'b0;
+            slv_w_ready_o = 1'b0;
+            mst_w_valid_o = 1'b0;
         end else begin
-            mst.w_valid = slv.w_valid;
-            slv.w_ready = mst.w_ready;
+            mst_w_valid_o = slv_w_valid_i;
+            slv_w_ready_o = mst_w_ready_i;
         end
 
         unique case (w_state_q)
@@ -383,13 +484,13 @@ module axi_riscv_amos #(
                         // Check if data is also available and does not belong to previous request
                         if (w_cnt_q == 0) begin
                             // Block downstream
-                            mst.w_valid = 1'b0;
+                            mst_w_valid_o = 1'b0;
                             // Fetch data and wait for all data
-                            slv.w_ready  = 1'b1;
-                            if (slv.w_valid) begin
+                            slv_w_ready_o  = 1'b1;
+                            if (slv_w_valid_i) begin
                                 if (atop_valid_d != INVALID) begin
-                                    atop_data_d  = slv.w_data;
-                                    strb_d       = slv.w_strb;
+                                    atop_data_d  = slv_w_data_i;
+                                    strb_d       = slv_w_strb_i;
                                     data_valid_d = 1'b1;
                                     w_state_d    = W_WAIT_RESULT;
                                 end
@@ -399,7 +500,7 @@ module axi_riscv_amos #(
                             end
                         end else begin
                             // Remember the amount of outstanding bursts and count down
-                            if (mst.w_valid && mst.w_ready && mst.w_last) begin
+                            if (mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
                                 w_cnt_req_d = w_cnt_q - 1;
                             end else begin
                                 w_cnt_req_d = w_cnt_q;
@@ -414,21 +515,21 @@ module axi_riscv_amos #(
                 // Count W beats until data arrives that belongs to the AMO request
                 if (w_cnt_req_q == 0) begin
                     // Block downstream
-                    mst.w_valid = 1'b0;
+                    mst_w_valid_o = 1'b0;
                     // Ready upstream
-                    slv.w_ready = 1'b1;
+                    slv_w_ready_o = 1'b1;
 
-                    if (slv.w_valid) begin
+                    if (slv_w_valid_i) begin
                         if (atop_valid_q == INVALID) begin
                             w_state_d    = FEEDTHROUGH_W;
                         end else begin
-                            atop_data_d  = slv.w_data;
-                            strb_d       = slv.w_strb;
+                            atop_data_d  = slv_w_data_i;
+                            strb_d       = slv_w_strb_i;
                             data_valid_d = 1'b1;
                             w_state_d    = W_WAIT_RESULT;
                         end
                     end
-                end else if (mst.w_valid && mst.w_ready && mst.w_last) begin
+                end else if (mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
                     w_cnt_req_d = w_cnt_req_q - 1;
                 end
             end
@@ -440,13 +541,13 @@ module axi_riscv_amos #(
                     write_data_d = alu_result_ext;
                     if (w_free && w_cnt_q == 0) begin
                         // Block
-                        slv.w_ready  = 1'b0;
+                        slv_w_ready_o  = 1'b0;
                         // Send write data
-                        mst.w_valid  = 1'b1;
-                        mst.w_data   = alu_result_ext;
-                        mst.w_last   = 1'b1;
-                        mst.w_strb   = strb_q;
-                        if (mst.w_ready) begin
+                        mst_w_valid_o  = 1'b1;
+                        mst_w_data_o   = alu_result_ext;
+                        mst_w_last_o   = 1'b1;
+                        mst_w_strb_o   = strb_q;
+                        if (mst_w_ready_i) begin
                             w_state_d = FEEDTHROUGH_W;
                         end else begin
                             w_state_d = SEND_W;
@@ -461,13 +562,13 @@ module axi_riscv_amos #(
                 // Wait to not interleave the data
                 if (w_free && w_cnt_inj_q == 0) begin
                     // Block
-                    slv.w_ready = 1'b0;
+                    slv_w_ready_o = 1'b0;
                     // Send write data
-                    mst.w_valid  = 1'b1;
-                    mst.w_data   = write_data_q;
-                    mst.w_last   = 1'b1;
-                    mst.w_strb   = strb_q;
-                    if (mst.w_ready) begin
+                    mst_w_valid_o  = 1'b1;
+                    mst_w_data_o   = write_data_q;
+                    mst_w_last_o   = 1'b1;
+                    mst_w_strb_o   = strb_q;
+                    if (mst_w_ready_i) begin
                         w_state_d = FEEDTHROUGH_W;
                     end else begin
                         w_state_d = SEND_W;
@@ -477,13 +578,13 @@ module axi_riscv_amos #(
 
             SEND_W: begin
                 // Block
-                slv.w_ready = 1'b0;
+                slv_w_ready_o = 1'b0;
                 // Send write data
-                mst.w_valid  = 1'b1;
-                mst.w_data   = write_data_q;
-                mst.w_last   = 1'b1;
-                mst.w_strb   = strb_q;
-                if (mst.w_ready) begin
+                mst_w_valid_o  = 1'b1;
+                mst_w_data_o   = write_data_q;
+                mst_w_last_o   = 1'b1;
+                mst_w_strb_o   = strb_q;
+                if (mst_w_ready_i) begin
                     w_state_d = FEEDTHROUGH_W;
                 end
             end // SEND_W
@@ -498,11 +599,11 @@ module axi_riscv_amos #(
     ====================================================================*/
     always_comb begin : axi_b_channel
         // Defaults
-        mst.b_ready  = slv.b_ready;
-        slv.b_id     = mst.b_id;
-        slv.b_resp   = mst.b_resp;
-        slv.b_user   = mst.b_user;
-        slv.b_valid  = mst.b_valid;
+        mst_b_ready_o  = slv_b_ready_i;
+        slv_b_id_o     = mst_b_id_i;
+        slv_b_resp_o   = mst_b_resp_i;
+        slv_b_user_o   = mst_b_user_i;
+        slv_b_valid_o  = mst_b_valid_i;
         // State Machine
         b_state_d    = b_state_q;
 
@@ -515,15 +616,15 @@ module axi_riscv_amos #(
                     end else if (atop_valid_d == INVALID) begin
                         // Inject B resp
                         // Check if the B channel is free
-                        if (mst.b_valid) begin
+                        if (mst_b_valid_i) begin
                             b_state_d   = WAIT_B;
                         end else begin
-                            mst.b_ready  = 1'b0;
+                            mst_b_ready_o  = 1'b0;
                             // Write B response
-                            slv.b_id     = slv.aw_id;
-                            slv.b_resp   = axi_pkg::RESP_SLVERR;
-                            slv.b_valid  = 1'b1;
-                            if (!slv.b_ready) begin
+                            slv_b_id_o     = slv_aw_id_i;
+                            slv_b_resp_o   = axi_pkg::RESP_SLVERR;
+                            slv_b_valid_o  = 1'b1;
+                            if (!slv_b_ready_i) begin
                                 b_state_d = SEND_B;
                             end
                         end
@@ -533,12 +634,12 @@ module axi_riscv_amos #(
 
             WAIT_B, SEND_B: begin
                 if (b_free || (b_state_q == SEND_B)) begin
-                    mst.b_ready  = 1'b0;
+                    mst_b_ready_o  = 1'b0;
                     // Write B response
-                    slv.b_id     = id_q;
-                    slv.b_resp   = axi_pkg::RESP_SLVERR;
-                    slv.b_valid  = 1'b1;
-                    if (slv.b_ready) begin
+                    slv_b_id_o     = id_q;
+                    slv_b_resp_o   = axi_pkg::RESP_SLVERR;
+                    slv_b_valid_o  = 1'b1;
+                    if (slv_b_ready_i) begin
                         b_state_d = FEEDTHROUGH_B;
                     end else begin
                         b_state_d = SEND_B;
@@ -547,7 +648,7 @@ module axi_riscv_amos #(
             end // WAIT_B
 
             VALID_REQ: begin
-                if (mst.b_valid && mst.b_id == id_q) begin
+                if (mst_b_valid_i && mst_b_id_i == id_q) begin
                     b_state_d = FEEDTHROUGH_B;
                 end
             end // VALID_REQ
@@ -560,10 +661,10 @@ module axi_riscv_amos #(
     // Keep track of outstanding downstream write bursts and responses.
     always_comb begin
         w_cnt_d = w_cnt_q;
-        if (mst.aw_valid && mst.aw_ready) begin
+        if (mst_aw_valid_o && mst_aw_ready_i) begin
             w_cnt_d += 1;
         end
-        if (mst.w_valid && mst.w_ready && mst.w_last) begin
+        if (mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
             w_cnt_d -= 1;
         end
     end
@@ -620,19 +721,19 @@ module axi_riscv_amos #(
     =                                AR                                  =
     ====================================================================*/
     always_comb begin : axi_AR_channel
-        mst.ar_id     = slv.ar_id;
-        mst.ar_addr   = slv.ar_addr;
-        mst.ar_len    = slv.ar_len;
-        mst.ar_size   = slv.ar_size;
-        mst.ar_burst  = slv.ar_burst;
-        mst.ar_lock   = slv.ar_lock;
-        mst.ar_cache  = slv.ar_cache;
-        mst.ar_prot   = slv.ar_prot;
-        mst.ar_qos    = slv.ar_qos;
-        mst.ar_region = slv.ar_region;
-        mst.ar_user   = slv.ar_user;
-        mst.ar_valid  = 1'b0;
-        slv.ar_ready  = 1'b0;
+        mst_ar_id_o     = slv_ar_id_i;
+        mst_ar_addr_o   = slv_ar_addr_i;
+        mst_ar_len_o    = slv_ar_len_i;
+        mst_ar_size_o   = slv_ar_size_i;
+        mst_ar_burst_o  = slv_ar_burst_i;
+        mst_ar_lock_o   = slv_ar_lock_i;
+        mst_ar_cache_o  = slv_ar_cache_i;
+        mst_ar_prot_o   = slv_ar_prot_i;
+        mst_ar_qos_o    = slv_ar_qos_i;
+        mst_ar_region_o = slv_ar_region_i;
+        mst_ar_user_o   = slv_ar_user_i;
+        mst_ar_valid_o  = 1'b0;
+        slv_ar_ready_o  = 1'b0;
 
         // State Machine
         ar_state_d  = ar_state_q;
@@ -641,26 +742,31 @@ module axi_riscv_amos #(
 
             FEEDTHROUGH_AR: begin
                 // Feed through
-                mst.ar_valid  = slv.ar_valid;
-                slv.ar_ready  = mst.ar_ready;
+                mst_ar_valid_o  = slv_ar_valid_i;
+                slv_ar_ready_o  = mst_ar_ready_i;
 
                 if (adapter_ready) begin
                     if (atop_valid_d == VALID | atop_valid_d == STORE) begin
-                        if (slv.ar_valid) begin
+                        if (slv_ar_valid_i) begin
                             // Wait until AR is free
                             ar_state_d   = WAIT_AR;
                         end else begin
                             // Acquire channel
-                            slv.ar_ready = 1'b0;
+                            slv_ar_ready_o  = 1'b0;
                             // Immediately start read request
-                            mst.ar_addr  = slv.aw_addr;
-                            mst.ar_id    = slv.aw_id;
-                            mst.ar_len   = 8'h00;
-                            mst.ar_size  = slv.aw_size;
-                            mst.ar_burst = 2'b00;
-                            mst.ar_lock  = 1'h0;
-                            mst.ar_valid = 1'b1;
-                            if (!mst.ar_ready) begin
+                            mst_ar_addr_o   = slv_aw_addr_i;
+                            mst_ar_id_o     = slv_aw_id_i;
+                            mst_ar_len_o    = 8'h00;
+                            mst_ar_size_o   = slv_aw_size_i;
+                            mst_ar_burst_o  = 2'b00;
+                            mst_ar_lock_o   = 1'h0;
+                            mst_ar_valid_o  = 1'b1;
+                            mst_ar_cache_o  = slv_aw_cache_i;
+                            mst_ar_prot_o   = slv_aw_prot_i;
+                            mst_ar_qos_o    = slv_aw_qos_i;
+                            mst_ar_region_o = slv_aw_region_i;
+                            mst_ar_user_o   = slv_aw_user_i;
+                            if (!mst_ar_ready_i) begin
                                 // Hold read request but do not depend on AW
                                 ar_state_d = REQ_AR;
                             end
@@ -673,14 +779,19 @@ module axi_riscv_amos #(
                 // Issue read request
                 if (ar_free) begin
                     // Inject read request
-                    mst.ar_addr  = addr_q;
-                    mst.ar_id    = id_q;
-                    mst.ar_len   = 8'h00;
-                    mst.ar_size  = slv.aw_size;
-                    mst.ar_burst = 2'b00;
-                    mst.ar_lock  = 1'h0;
-                    mst.ar_valid = 1'b1;
-                    if (mst.ar_ready) begin
+                    mst_ar_addr_o   = addr_q;
+                    mst_ar_id_o     = id_q;
+                    mst_ar_len_o    = 8'h00;
+                    mst_ar_size_o   = size_q;
+                    mst_ar_burst_o  = 2'b00;
+                    mst_ar_lock_o   = 1'h0;
+                    mst_ar_valid_o  = 1'b1;
+                    mst_ar_cache_o  = cache_q;
+                    mst_ar_prot_o   = prot_q;
+                    mst_ar_qos_o    = qos_q;
+                    mst_ar_region_o = region_q;
+                    mst_ar_user_o   = user_q;
+                    if (mst_ar_ready_i) begin
                         // Request acknowledged
                         ar_state_d = FEEDTHROUGH_AR;
                     end else begin
@@ -689,18 +800,26 @@ module axi_riscv_amos #(
                     end
                 end else begin
                     // Wait until AR is free
-                    mst.ar_valid  = slv.ar_valid;
-                    slv.ar_ready  = mst.ar_ready;
+                    mst_ar_valid_o = slv_ar_valid_i;
+                    slv_ar_ready_o = mst_ar_ready_i;
                 end
             end // WAIT_AR
 
             REQ_AR: begin
                 // Inject read request
-                mst.ar_addr  = addr_q;
-                mst.ar_id    = id_q;
-                mst.ar_len   = 8'h00;
-                mst.ar_valid = 1'b1;
-                if (mst.ar_ready) begin
+                mst_ar_addr_o   = addr_q;
+                mst_ar_id_o     = id_q;
+                mst_ar_len_o    = 8'h00;
+                mst_ar_size_o   = size_q;
+                mst_ar_burst_o  = 2'b00;
+                mst_ar_lock_o   = 1'h0;
+                mst_ar_valid_o  = 1'b1;
+                mst_ar_cache_o  = cache_q;
+                mst_ar_prot_o   = prot_q;
+                mst_ar_qos_o    = qos_q;
+                mst_ar_region_o = region_q;
+                mst_ar_user_o   = user_q;
+                if (mst_ar_ready_i) begin
                     // Request acknowledged
                     ar_state_d = FEEDTHROUGH_AR;
                 end
@@ -717,13 +836,13 @@ module axi_riscv_amos #(
     always_comb begin : axi_R_channel
 
         // Feed through the R channel by default
-        mst.r_ready   = slv.r_ready;
-        slv.r_id      = mst.r_id;
-        slv.r_data    = mst.r_data;
-        slv.r_resp    = mst.r_resp;
-        slv.r_last    = mst.r_last;
-        slv.r_user    = mst.r_user;
-        slv.r_valid   = mst.r_valid;
+        mst_r_ready_o   = slv_r_ready_i;
+        slv_r_id_o      = mst_r_id_i;
+        slv_r_data_o    = mst_r_data_i;
+        slv_r_resp_o    = mst_r_resp_i;
+        slv_r_last_o    = mst_r_last_i;
+        slv_r_user_o    = mst_r_user_i;
+        slv_r_valid_o   = mst_r_valid_i;
 
         // State Machine
         read_data_d = read_data_q;
@@ -743,12 +862,12 @@ module axi_riscv_amos #(
                     end else if (atop_valid_d == INVALID) begin
                         // Send R response
                         // Check if the R channel is free
-                        if (mst.r_valid) begin
+                        if (mst_r_valid_i) begin
                             r_state_d = WAIT_R;
                         end else begin
                             // Acquire the R channel
-                            slv.r_valid = 1'b0;
-                            mst.r_ready = 1'b0;
+                            slv_r_valid_o = 1'b0;
+                            mst_r_ready_o = 1'b0;
                             r_state_d   = SEND_R;
                         end
                     end else if (atop_valid_d == STORE) begin
@@ -760,10 +879,10 @@ module axi_riscv_amos #(
 
             WAIT_DATA_AR: begin
                 // Read data
-                if (mst.r_valid && (mst.r_id == id_q)) begin
-                    read_data_d = mst.r_data;
+                if (mst_r_valid_i && (mst_r_id_i == id_q)) begin
+                    read_data_d = mst_r_data_i;
                     read_done_d = 1'b1;
-                    if (slv.r_ready) begin
+                    if (slv_r_ready_i) begin
                         r_state_d  = FEEDTHROUGH_R;
                     end
                 end
@@ -771,13 +890,13 @@ module axi_riscv_amos #(
 
             CATCH_R: begin
                 // Atomic store --> block the R response
-                if (mst.r_valid && (mst.r_id == id_q)) begin
+                if (mst_r_valid_i && (mst_r_id_i == id_q)) begin
                     // Block
-                    slv.r_valid = 1'b0;
+                    slv_r_valid_o = 1'b0;
                     // ACK
-                    mst.r_ready = 1'b1;
+                    mst_r_ready_o = 1'b1;
                     // Store data
-                    read_data_d = mst.r_data;
+                    read_data_d = mst_r_data_i;
                     read_done_d = 1'b1;
                     r_state_d   = FEEDTHROUGH_R;
                 end
@@ -787,14 +906,14 @@ module axi_riscv_amos #(
                 // Wait for the R channel to become free
                 if (r_free) begin
                     // Block memory
-                    mst.r_ready = 1'b0;
+                    mst_r_ready_o = 1'b0;
                     // Send own R resp
-                    slv.r_valid = 1'b1;
-                    slv.r_data  = '1;
-                    slv.r_id    = id_q;
-                    slv.r_resp  = axi_pkg::RESP_SLVERR;
-                    slv.r_last  = 1'b1;
-                    if (slv.r_ready) begin
+                    slv_r_valid_o = 1'b1;
+                    slv_r_data_o  = '1;
+                    slv_r_id_o    = id_q;
+                    slv_r_resp_o  = axi_pkg::RESP_SLVERR;
+                    slv_r_last_o  = 1'b1;
+                    if (slv_r_ready_i) begin
                         r_state_d = FEEDTHROUGH_R;
                     end else begin
                         r_state_d = SEND_R;
@@ -804,14 +923,14 @@ module axi_riscv_amos #(
 
             SEND_R: begin
                 // Block memory
-                mst.r_ready = 1'b0;
+                mst_r_ready_o = 1'b0;
                 // Send own R resp
-                slv.r_valid = 1'b1;
-                slv.r_data  = '1;
-                slv.r_id    = id_q;
-                slv.r_resp  = axi_pkg::RESP_SLVERR;
-                slv.r_last  = 1'b1;
-                if (slv.r_ready) begin
+                slv_r_valid_o = 1'b1;
+                slv_r_data_o  = '1;
+                slv_r_id_o    = id_q;
+                slv_r_resp_o  = axi_pkg::RESP_SLVERR;
+                slv_r_last_o  = 1'b1;
+                if (slv_r_ready_i) begin
                     r_state_d = FEEDTHROUGH_R;
                 end
             end // SEND_R
@@ -914,33 +1033,6 @@ module axi_riscv_amos #(
         .amo_operand_a_i    ( alu_operand_a ),
         .amo_operand_b_i    ( alu_operand_b ),
         .amo_result_o       ( alu_result    )
-    );
-
-    // Decouple the Interface ports from the internal signals.
-    // Setting the interface's signals directly can lead to
-    // infinite loops between always_comb blocks in modelsim.
-    AXI_BUS #(
-      .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
-      .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
-      .AXI_ID_WIDTH   ( AXI_ID_WIDTH   ),
-      .AXI_USER_WIDTH ( AXI_USER_WIDTH )
-    ) mst();
-
-    AXI_BUS #(
-      .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
-      .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
-      .AXI_ID_WIDTH   ( AXI_ID_WIDTH   ),
-      .AXI_USER_WIDTH ( AXI_USER_WIDTH )
-    ) slv();
-
-    axi_join i_axi_join_mst (
-        .in     ( mst      ),
-        .out    ( mst_port )
-    );
-
-    axi_join i_axi_join_slv (
-        .in     ( slv_port ),
-        .out    ( slv      )
     );
 
     // Validate parameters.

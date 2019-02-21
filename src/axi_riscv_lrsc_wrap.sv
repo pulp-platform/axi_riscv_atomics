@@ -9,7 +9,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-// Wrapper for the AXI RISC-V LR/SC Adapter that provides AXI ports as individual signals.
+// Wrapper for the AXI RISC-V LR/SC Adapter that exposes AXI SystemVerilog interfaces.
 //
 // See the header of `axi_riscv_lrsc` for a description.
 //
@@ -27,227 +27,11 @@ module axi_riscv_lrsc_wrap #(
     /// Derived Parameters (do NOT change manually!)
     localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8
 ) (
-    input  logic                        clk_i,
-    input  logic                        rst_ni,
-
-    /// Slave Interface
-    input  logic [AXI_ADDR_WIDTH-1:0]   slv_aw_addr_i,
-    input  logic [2:0]                  slv_aw_prot_i,
-    input  logic [3:0]                  slv_aw_region_i,
-    input  logic [5:0]                  slv_aw_atop_i,
-    input  logic [7:0]                  slv_aw_len_i,
-    input  logic [2:0]                  slv_aw_size_i,
-    input  logic [1:0]                  slv_aw_burst_i,
-    input  logic                        slv_aw_lock_i,
-    input  logic [3:0]                  slv_aw_cache_i,
-    input  logic [3:0]                  slv_aw_qos_i,
-    input  logic [AXI_ID_WIDTH-1:0]     slv_aw_id_i,
-    input  logic [AXI_USER_WIDTH-1:0]   slv_aw_user_i,
-    output logic                        slv_aw_ready_o,
-    input  logic                        slv_aw_valid_i,
-
-    input  logic [AXI_ADDR_WIDTH-1:0]   slv_ar_addr_i,
-    input  logic [2:0]                  slv_ar_prot_i,
-    input  logic [3:0]                  slv_ar_region_i,
-    input  logic [7:0]                  slv_ar_len_i,
-    input  logic [2:0]                  slv_ar_size_i,
-    input  logic [1:0]                  slv_ar_burst_i,
-    input  logic                        slv_ar_lock_i,
-    input  logic [3:0]                  slv_ar_cache_i,
-    input  logic [3:0]                  slv_ar_qos_i,
-    input  logic [AXI_ID_WIDTH-1:0]     slv_ar_id_i,
-    input  logic [AXI_USER_WIDTH-1:0]   slv_ar_user_i,
-    output logic                        slv_ar_ready_o,
-    input  logic                        slv_ar_valid_i,
-
-    input  logic [AXI_DATA_WIDTH-1:0]   slv_w_data_i,
-    input  logic [AXI_STRB_WIDTH-1:0]   slv_w_strb_i,
-    input  logic [AXI_USER_WIDTH-1:0]   slv_w_user_i,
-    input  logic                        slv_w_last_i,
-    output logic                        slv_w_ready_o,
-    input  logic                        slv_w_valid_i,
-
-    output logic [AXI_DATA_WIDTH-1:0]   slv_r_data_o,
-    output logic [1:0]                  slv_r_resp_o,
-    output logic                        slv_r_last_o,
-    output logic [AXI_ID_WIDTH-1:0]     slv_r_id_o,
-    output logic [AXI_USER_WIDTH-1:0]   slv_r_user_o,
-    input  logic                        slv_r_ready_i,
-    output logic                        slv_r_valid_o,
-
-    output logic [1:0]                  slv_b_resp_o,
-    output logic [AXI_ID_WIDTH-1:0]     slv_b_id_o,
-    output logic [AXI_USER_WIDTH-1:0]   slv_b_user_o,
-    input  logic                        slv_b_ready_i,
-    output logic                        slv_b_valid_o,
-
-    /// Master Interface
-    output logic [AXI_ADDR_WIDTH-1:0]   mst_aw_addr_o,
-    output logic [2:0]                  mst_aw_prot_o,
-    output logic [3:0]                  mst_aw_region_o,
-    output logic [5:0]                  mst_aw_atop_o,
-    output logic [7:0]                  mst_aw_len_o,
-    output logic [2:0]                  mst_aw_size_o,
-    output logic [1:0]                  mst_aw_burst_o,
-    output logic                        mst_aw_lock_o,
-    output logic [3:0]                  mst_aw_cache_o,
-    output logic [3:0]                  mst_aw_qos_o,
-    output logic [AXI_ID_WIDTH-1:0]     mst_aw_id_o,
-    output logic [AXI_USER_WIDTH-1:0]   mst_aw_user_o,
-    input  logic                        mst_aw_ready_i,
-    output logic                        mst_aw_valid_o,
-
-    output logic [AXI_ADDR_WIDTH-1:0]   mst_ar_addr_o,
-    output logic [2:0]                  mst_ar_prot_o,
-    output logic [3:0]                  mst_ar_region_o,
-    output logic [7:0]                  mst_ar_len_o,
-    output logic [2:0]                  mst_ar_size_o,
-    output logic [1:0]                  mst_ar_burst_o,
-    output logic                        mst_ar_lock_o,
-    output logic [3:0]                  mst_ar_cache_o,
-    output logic [3:0]                  mst_ar_qos_o,
-    output logic [AXI_ID_WIDTH-1:0]     mst_ar_id_o,
-    output logic [AXI_USER_WIDTH-1:0]   mst_ar_user_o,
-    input  logic                        mst_ar_ready_i,
-    output logic                        mst_ar_valid_o,
-
-    output logic [AXI_DATA_WIDTH-1:0]   mst_w_data_o,
-    output logic [AXI_STRB_WIDTH-1:0]   mst_w_strb_o,
-    output logic [AXI_USER_WIDTH-1:0]   mst_w_user_o,
-    output logic                        mst_w_last_o,
-    input  logic                        mst_w_ready_i,
-    output logic                        mst_w_valid_o,
-
-    input  logic [AXI_DATA_WIDTH-1:0]   mst_r_data_i,
-    input  logic [1:0]                  mst_r_resp_i,
-    input  logic                        mst_r_last_i,
-    input  logic [AXI_ID_WIDTH-1:0]     mst_r_id_i,
-    input  logic [AXI_USER_WIDTH-1:0]   mst_r_user_i,
-    output logic                        mst_r_ready_o,
-    input  logic                        mst_r_valid_i,
-
-    input  logic [1:0]                  mst_b_resp_i,
-    input  logic [AXI_ID_WIDTH-1:0]     mst_b_id_i,
-    input  logic [AXI_USER_WIDTH-1:0]   mst_b_user_i,
-    output logic                        mst_b_ready_o,
-    input  logic                        mst_b_valid_i
+    input  logic    clk_i,
+    input  logic    rst_ni,
+    AXI_BUS.Master  mst,
+    AXI_BUS.Slave   slv
 );
-
-    // Internal Slave
-    AXI_BUS #(
-        .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
-        .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
-        .AXI_ID_WIDTH   (AXI_ID_WIDTH),
-        .AXI_USER_WIDTH (AXI_USER_WIDTH)
-    ) int_slv ();
-
-    assign int_slv.aw_addr = slv_aw_addr_i;
-    assign int_slv.aw_prot = slv_aw_prot_i;
-    assign int_slv.aw_region = slv_aw_region_i;
-    assign int_slv.aw_atop = slv_aw_atop_i;
-    assign int_slv.aw_len = slv_aw_len_i;
-    assign int_slv.aw_size = slv_aw_size_i;
-    assign int_slv.aw_burst = slv_aw_burst_i;
-    assign int_slv.aw_lock = slv_aw_lock_i;
-    assign int_slv.aw_cache = slv_aw_cache_i;
-    assign int_slv.aw_qos = slv_aw_qos_i;
-    assign int_slv.aw_id = slv_aw_id_i;
-    assign int_slv.aw_user = slv_aw_user_i;
-    assign slv_aw_ready_o = int_slv.aw_ready;
-    assign int_slv.aw_valid = slv_aw_valid_i;
-
-    assign int_slv.ar_addr = slv_ar_addr_i;
-    assign int_slv.ar_prot = slv_ar_prot_i;
-    assign int_slv.ar_region = slv_ar_region_i;
-    assign int_slv.ar_len = slv_ar_len_i;
-    assign int_slv.ar_size = slv_ar_size_i;
-    assign int_slv.ar_burst = slv_ar_burst_i;
-    assign int_slv.ar_lock = slv_ar_lock_i;
-    assign int_slv.ar_cache = slv_ar_cache_i;
-    assign int_slv.ar_qos = slv_ar_qos_i;
-    assign int_slv.ar_id = slv_ar_id_i;
-    assign int_slv.ar_user = slv_ar_user_i;
-    assign slv_ar_ready_o = int_slv.ar_ready;
-    assign int_slv.ar_valid = slv_ar_valid_i;
-
-    assign int_slv.w_valid = slv_w_valid_i;
-    assign int_slv.w_data = slv_w_data_i;
-    assign int_slv.w_strb = slv_w_strb_i;
-    assign int_slv.w_user = slv_w_user_i;
-    assign int_slv.w_last = slv_w_last_i;
-    assign slv_w_ready_o = int_slv.w_ready;
-
-    assign slv_r_data_o = int_slv.r_data;
-    assign slv_r_resp_o = int_slv.r_resp;
-    assign slv_r_last_o = int_slv.r_last;
-    assign slv_r_id_o = int_slv.r_id;
-    assign slv_r_user_o = int_slv.r_user;
-    assign int_slv.r_ready = slv_r_ready_i;
-    assign slv_r_valid_o = int_slv.r_valid;
-
-    assign slv_b_resp_o = int_slv.b_resp;
-    assign slv_b_id_o = int_slv.b_id;
-    assign slv_b_user_o = int_slv.b_user;
-    assign int_slv.b_ready = slv_b_ready_i;
-    assign slv_b_valid_o = int_slv.b_valid;
-
-    // Internal Master
-    AXI_BUS #(
-        .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
-        .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
-        .AXI_ID_WIDTH   (AXI_ID_WIDTH),
-        .AXI_USER_WIDTH (AXI_USER_WIDTH)
-    ) int_mst ();
-
-    assign mst_aw_addr_o = int_mst.aw_addr;
-    assign mst_aw_prot_o = int_mst.aw_prot;
-    assign mst_aw_region_o = int_mst.aw_region;
-    assign mst_aw_atop_o = int_mst.aw_atop;
-    assign mst_aw_len_o = int_mst.aw_len;
-    assign mst_aw_size_o = int_mst.aw_size;
-    assign mst_aw_burst_o = int_mst.aw_burst;
-    assign mst_aw_lock_o = int_mst.aw_lock;
-    assign mst_aw_cache_o = int_mst.aw_cache;
-    assign mst_aw_qos_o = int_mst.aw_qos;
-    assign mst_aw_id_o = int_mst.aw_id;
-    assign mst_aw_user_o = int_mst.aw_user;
-    assign int_mst.aw_ready = mst_aw_ready_i;
-    assign mst_aw_valid_o = int_mst.aw_valid;
-
-    assign mst_ar_addr_o = int_mst.ar_addr;
-    assign mst_ar_prot_o = int_mst.ar_prot;
-    assign mst_ar_region_o = int_mst.ar_region;
-    assign mst_ar_len_o = int_mst.ar_len;
-    assign mst_ar_size_o = int_mst.ar_size;
-    assign mst_ar_burst_o = int_mst.ar_burst;
-    assign mst_ar_lock_o = int_mst.ar_lock;
-    assign mst_ar_cache_o = int_mst.ar_cache;
-    assign mst_ar_qos_o = int_mst.ar_qos;
-    assign mst_ar_id_o = int_mst.ar_id;
-    assign mst_ar_user_o = int_mst.ar_user;
-    assign int_mst.ar_ready = mst_ar_ready_i;
-    assign mst_ar_valid_o = int_mst.ar_valid;
-
-    assign mst_w_valid_o = int_mst.w_valid;
-    assign mst_w_data_o = int_mst.w_data;
-    assign mst_w_strb_o = int_mst.w_strb;
-    assign mst_w_user_o = int_mst.w_user;
-    assign mst_w_last_o = int_mst.w_last;
-    assign int_mst.w_ready = mst_w_ready_i;
-
-    assign int_mst.r_data = mst_r_data_i;
-    assign int_mst.r_resp = mst_r_resp_i;
-    assign int_mst.r_last = mst_r_last_i;
-    assign int_mst.r_id = mst_r_id_i;
-    assign int_mst.r_user = mst_r_user_i;
-    assign mst_r_ready_o = int_mst.r_ready;
-    assign int_mst.r_valid = mst_r_valid_i;
-
-    assign int_mst.b_resp = mst_b_resp_i;
-    assign int_mst.b_id = mst_b_id_i;
-    assign int_mst.b_user = mst_b_user_i;
-    assign mst_b_ready_o = int_mst.b_ready;
-    assign int_mst.b_valid = mst_b_valid_i;
 
     axi_riscv_lrsc #(
         .ADDR_BEGIN     (ADDR_BEGIN),
@@ -257,10 +41,98 @@ module axi_riscv_lrsc_wrap #(
         .AXI_ID_WIDTH   (AXI_ID_WIDTH),
         .AXI_USER_WIDTH (AXI_USER_WIDTH)
     ) i_lrsc (
-        .clk_i      (clk_i),
-        .rst_ni     (rst_ni),
-        .mst_port   (int_mst),
-        .slv_port   (int_slv)
+        .clk_i           ( clk_i         ),
+        .rst_ni          ( rst_ni        ),
+        .slv_aw_addr_i   ( slv.aw_addr   ),
+        .slv_aw_prot_i   ( slv.aw_prot   ),
+        .slv_aw_region_i ( slv.aw_region ),
+        .slv_aw_atop_i   ( slv.aw_atop   ),
+        .slv_aw_len_i    ( slv.aw_len    ),
+        .slv_aw_size_i   ( slv.aw_size   ),
+        .slv_aw_burst_i  ( slv.aw_burst  ),
+        .slv_aw_lock_i   ( slv.aw_lock   ),
+        .slv_aw_cache_i  ( slv.aw_cache  ),
+        .slv_aw_qos_i    ( slv.aw_qos    ),
+        .slv_aw_id_i     ( slv.aw_id     ),
+        .slv_aw_user_i   ( slv.aw_user   ),
+        .slv_aw_ready_o  ( slv.aw_ready  ),
+        .slv_aw_valid_i  ( slv.aw_valid  ),
+        .slv_ar_addr_i   ( slv.ar_addr   ),
+        .slv_ar_prot_i   ( slv.ar_prot   ),
+        .slv_ar_region_i ( slv.ar_region ),
+        .slv_ar_len_i    ( slv.ar_len    ),
+        .slv_ar_size_i   ( slv.ar_size   ),
+        .slv_ar_burst_i  ( slv.ar_burst  ),
+        .slv_ar_lock_i   ( slv.ar_lock   ),
+        .slv_ar_cache_i  ( slv.ar_cache  ),
+        .slv_ar_qos_i    ( slv.ar_qos    ),
+        .slv_ar_id_i     ( slv.ar_id     ),
+        .slv_ar_user_i   ( slv.ar_user   ),
+        .slv_ar_ready_o  ( slv.ar_ready  ),
+        .slv_ar_valid_i  ( slv.ar_valid  ),
+        .slv_w_data_i    ( slv.w_data    ),
+        .slv_w_strb_i    ( slv.w_strb    ),
+        .slv_w_user_i    ( slv.w_user    ),
+        .slv_w_last_i    ( slv.w_last    ),
+        .slv_w_ready_o   ( slv.w_ready   ),
+        .slv_w_valid_i   ( slv.w_valid   ),
+        .slv_r_data_o    ( slv.r_data    ),
+        .slv_r_resp_o    ( slv.r_resp    ),
+        .slv_r_last_o    ( slv.r_last    ),
+        .slv_r_id_o      ( slv.r_id      ),
+        .slv_r_user_o    ( slv.r_user    ),
+        .slv_r_ready_i   ( slv.r_ready   ),
+        .slv_r_valid_o   ( slv.r_valid   ),
+        .slv_b_resp_o    ( slv.b_resp    ),
+        .slv_b_id_o      ( slv.b_id      ),
+        .slv_b_user_o    ( slv.b_user    ),
+        .slv_b_ready_i   ( slv.b_ready   ),
+        .slv_b_valid_o   ( slv.b_valid   ),
+        .mst_aw_addr_o   ( mst.aw_addr   ),
+        .mst_aw_prot_o   ( mst.aw_prot   ),
+        .mst_aw_region_o ( mst.aw_region ),
+        .mst_aw_atop_o   ( mst.aw_atop   ),
+        .mst_aw_len_o    ( mst.aw_len    ),
+        .mst_aw_size_o   ( mst.aw_size   ),
+        .mst_aw_burst_o  ( mst.aw_burst  ),
+        .mst_aw_lock_o   ( mst.aw_lock   ),
+        .mst_aw_cache_o  ( mst.aw_cache  ),
+        .mst_aw_qos_o    ( mst.aw_qos    ),
+        .mst_aw_id_o     ( mst.aw_id     ),
+        .mst_aw_user_o   ( mst.aw_user   ),
+        .mst_aw_ready_i  ( mst.aw_ready  ),
+        .mst_aw_valid_o  ( mst.aw_valid  ),
+        .mst_ar_addr_o   ( mst.ar_addr   ),
+        .mst_ar_prot_o   ( mst.ar_prot   ),
+        .mst_ar_region_o ( mst.ar_region ),
+        .mst_ar_len_o    ( mst.ar_len    ),
+        .mst_ar_size_o   ( mst.ar_size   ),
+        .mst_ar_burst_o  ( mst.ar_burst  ),
+        .mst_ar_lock_o   ( mst.ar_lock   ),
+        .mst_ar_cache_o  ( mst.ar_cache  ),
+        .mst_ar_qos_o    ( mst.ar_qos    ),
+        .mst_ar_id_o     ( mst.ar_id     ),
+        .mst_ar_user_o   ( mst.ar_user   ),
+        .mst_ar_ready_i  ( mst.ar_ready  ),
+        .mst_ar_valid_o  ( mst.ar_valid  ),
+        .mst_w_data_o    ( mst.w_data    ),
+        .mst_w_strb_o    ( mst.w_strb    ),
+        .mst_w_user_o    ( mst.w_user    ),
+        .mst_w_last_o    ( mst.w_last    ),
+        .mst_w_ready_i   ( mst.w_ready   ),
+        .mst_w_valid_o   ( mst.w_valid   ),
+        .mst_r_data_i    ( mst.r_data    ),
+        .mst_r_resp_i    ( mst.r_resp    ),
+        .mst_r_last_i    ( mst.r_last    ),
+        .mst_r_id_i      ( mst.r_id      ),
+        .mst_r_user_i    ( mst.r_user    ),
+        .mst_r_ready_o   ( mst.r_ready   ),
+        .mst_r_valid_i   ( mst.r_valid   ),
+        .mst_b_resp_i    ( mst.b_resp    ),
+        .mst_b_id_i      ( mst.b_id      ),
+        .mst_b_user_i    ( mst.b_user    ),
+        .mst_b_ready_o   ( mst.b_ready   ),
+        .mst_b_valid_i   ( mst.b_valid   )
     );
 
     // Validate parameters.
