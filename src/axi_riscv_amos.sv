@@ -676,7 +676,7 @@ module axi_riscv_amos #(
                     mst.ar_addr  = addr_q;
                     mst.ar_id    = id_q;
                     mst.ar_len   = 8'h00;
-                    mst.ar_size  = slv.aw_size;
+                    mst.ar_size  = size_q;
                     mst.ar_burst = 2'b00;
                     mst.ar_lock  = 1'h0;
                     mst.ar_valid = 1'b1;
@@ -699,6 +699,9 @@ module axi_riscv_amos #(
                 mst.ar_addr  = addr_q;
                 mst.ar_id    = id_q;
                 mst.ar_len   = 8'h00;
+                mst.ar_size  = size_q;
+                mst.ar_burst = 2'b00;
+                mst.ar_lock  = 1'h0;
                 mst.ar_valid = 1'b1;
                 if (mst.ar_ready) begin
                     // Request acknowledged

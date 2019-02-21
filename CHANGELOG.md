@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 
 ## Unreleased
 
+## Fixed
+- `axi_riscv_amos`: Fixed burst, lock, and size of ARs.
+
 ## v0.1.1 - 2019-02-20
 
 ### Fixed
