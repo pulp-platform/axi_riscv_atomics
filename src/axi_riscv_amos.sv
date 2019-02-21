@@ -761,6 +761,11 @@ module axi_riscv_amos #(
                             mst_ar_burst_o  = 2'b00;
                             mst_ar_lock_o   = 1'h0;
                             mst_ar_valid_o  = 1'b1;
+                            mst_ar_cache_o  = slv_aw_cache_i;
+                            mst_ar_prot_o   = slv_aw_prot_i;
+                            mst_ar_qos_o    = slv_aw_qos_i;
+                            mst_ar_region_o = slv_aw_region_i;
+                            mst_ar_user_o   = slv_aw_user_i;
                             if (!mst_ar_ready_i) begin
                                 // Hold read request but do not depend on AW
                                 ar_state_d = REQ_AR;
@@ -781,6 +786,11 @@ module axi_riscv_amos #(
                     mst_ar_burst_o  = 2'b00;
                     mst_ar_lock_o   = 1'h0;
                     mst_ar_valid_o  = 1'b1;
+                    mst_ar_cache_o  = cache_q;
+                    mst_ar_prot_o   = prot_q;
+                    mst_ar_qos_o    = qos_q;
+                    mst_ar_region_o = region_q;
+                    mst_ar_user_o   = user_q;
                     if (mst_ar_ready_i) begin
                         // Request acknowledged
                         ar_state_d = FEEDTHROUGH_AR;
@@ -804,6 +814,11 @@ module axi_riscv_amos #(
                 mst_ar_burst_o  = 2'b00;
                 mst_ar_lock_o   = 1'h0;
                 mst_ar_valid_o  = 1'b1;
+                mst_ar_cache_o  = cache_q;
+                mst_ar_prot_o   = prot_q;
+                mst_ar_qos_o    = qos_q;
+                mst_ar_region_o = region_q;
+                mst_ar_user_o   = user_q;
                 if (mst_ar_ready_i) begin
                     // Request acknowledged
                     ar_state_d = FEEDTHROUGH_AR;

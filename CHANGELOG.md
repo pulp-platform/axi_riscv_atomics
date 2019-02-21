@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
   that have poor support for SystemVerilog interfaces.
 
 ## Fixed
-- `axi_riscv_amos`: Fixed burst, lock, and size of ARs.
+- `axi_riscv_amos`: Fixed burst, cache, lock, prot, qos, region, size, and user of ARs.
 
 ## v0.1.1 - 2019-02-20
 
