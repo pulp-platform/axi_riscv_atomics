@@ -157,7 +157,7 @@ module axi_riscv_amos #(
     typedef enum logic [1:0] { FEEDTHROUGH_AR, WAIT_AR, REQ_AR } ar_state_t;
     ar_state_t  ar_state_d, ar_state_q;
 
-    typedef enum logic [2:0] { FEEDTHROUGH_R, WAIT_DATA_AR, CATCH_R, WAIT_R, SEND_R } r_state_t;
+    typedef enum logic [1:0] { FEEDTHROUGH_R, WAIT_DATA_R, WAIT_R, SEND_R } r_state_t;
     r_state_t   r_state_d, r_state_q;
 
     typedef enum logic [1:0] { NONE, INVALID, VALID, STORE } atop_req_t;
@@ -174,6 +174,8 @@ module axi_riscv_amos #(
     logic [3:0]                         qos_d, qos_q;
     logic [3:0]                         region_d, region_q;
     logic [AXI_USER_WIDTH-1:0]          user_d, user_q;
+    logic [1:0]                         r_resp_d, r_resp_q;
+    logic [AXI_USER_WIDTH-1:0]          r_user_d, r_user_q;
     logic [AXI_DATA_WIDTH-1:0]          atop_data_d, atop_data_q;
     logic [AXI_DATA_WIDTH-1:0]          read_data_d, read_data_q;
     logic [AXI_DATA_WIDTH-1:0]          write_data_d, write_data_q;
@@ -846,6 +848,8 @@ module axi_riscv_amos #(
 
         // State Machine
         read_data_d = read_data_q;
+        r_resp_d    = r_resp_q;
+        r_user_d    = r_user_q;
         read_done_d = read_done_q;
         r_state_d   = r_state_q;
 
@@ -856,63 +860,61 @@ module axi_riscv_amos #(
                     // Reset read flag
                     read_done_d  = 1'b0;
 
-                    if (atop_valid_d == VALID) begin
+                    if (atop_valid_d == VALID || atop_valid_d == STORE) begin
                         // Wait for R response to read data
-                        r_state_d = WAIT_DATA_AR;
+                        r_state_d = WAIT_DATA_R;
                     end else if (atop_valid_d == INVALID) begin
                         // Send R response
                         // Check if the R channel is free
-                        if (mst_r_valid_i) begin
-                            r_state_d = WAIT_R;
-                        end else begin
+                        if (r_free) begin
                             // Acquire the R channel
                             slv_r_valid_o = 1'b0;
                             mst_r_ready_o = 1'b0;
                             r_state_d   = SEND_R;
+                        end else begin
+                            r_state_d = WAIT_R;
                         end
-                    end else if (atop_valid_d == STORE) begin
-                        // Wait for R response to catch
-                        r_state_d = CATCH_R;
                     end
                 end
             end // FEEDTHROUGH_R
 
-            WAIT_DATA_AR: begin
+            WAIT_DATA_R: begin
                 // Read data
                 if (mst_r_valid_i && (mst_r_id_i == id_q)) begin
-                    read_data_d = mst_r_data_i;
-                    read_done_d = 1'b1;
-                    if (slv_r_ready_i) begin
-                        r_state_d  = FEEDTHROUGH_R;
-                    end
-                end
-            end // WAIT_DATA_AR
-
-            CATCH_R: begin
-                // Atomic store --> block the R response
-                if (mst_r_valid_i && (mst_r_id_i == id_q)) begin
-                    // Block
-                    slv_r_valid_o = 1'b0;
-                    // ACK
+                    // Acknowledge downstream and block upstream
                     mst_r_ready_o = 1'b1;
+                    slv_r_valid_o = 1'b0;
                     // Store data
                     read_data_d = mst_r_data_i;
+                    r_resp_d    = mst_r_resp_i;
+                    r_user_d    = mst_r_user_i;
                     read_done_d = 1'b1;
-                    r_state_d   = FEEDTHROUGH_R;
+                    if (atop_valid_q == STORE) begin
+                        r_state_d   = FEEDTHROUGH_R;
+                    end else begin
+                        // Wait for B resp before injecting R
+                        r_state_d  = WAIT_R;
+                    end
                 end
-            end // CATCH_R
+            end // WAIT_DATA_R
 
-            WAIT_R: begin
-                // Wait for the R channel to become free
-                if (r_free) begin
+            WAIT_R, SEND_R: begin
+                // Wait for the R channel to become free and B response to be valid
+                if ((r_free && (b_state_q != VALID_REQ)) || (r_state_q == SEND_R)) begin
                     // Block memory
                     mst_r_ready_o = 1'b0;
-                    // Send own R resp
+                    // Send R response
                     slv_r_valid_o = 1'b1;
-                    slv_r_data_o  = '1;
+                    slv_r_data_o  = read_data_q;
                     slv_r_id_o    = id_q;
-                    slv_r_resp_o  = axi_pkg::RESP_SLVERR;
+                    slv_r_resp_o  = r_resp_q;
+                    slv_r_user_o  = r_user_q;
                     slv_r_last_o  = 1'b1;
+                    if (atop_valid_q == INVALID) begin
+                        slv_r_resp_o = axi_pkg::RESP_SLVERR;
+                        slv_r_data_o = '0;
+                        slv_r_user_o = '0;
+                    end
                     if (slv_r_ready_i) begin
                         r_state_d = FEEDTHROUGH_R;
                     end else begin
@@ -920,20 +922,6 @@ module axi_riscv_amos #(
                     end
                 end
             end // WAIT_R
-
-            SEND_R: begin
-                // Block memory
-                mst_r_ready_o = 1'b0;
-                // Send own R resp
-                slv_r_valid_o = 1'b1;
-                slv_r_data_o  = '1;
-                slv_r_id_o    = id_q;
-                slv_r_resp_o  = axi_pkg::RESP_SLVERR;
-                slv_r_last_o  = 1'b1;
-                if (slv_r_ready_i) begin
-                    r_state_d = FEEDTHROUGH_R;
-                end
-            end // SEND_R
 
             default: r_state_d = FEEDTHROUGH_R;
 
@@ -945,11 +933,15 @@ module axi_riscv_amos #(
             ar_state_q  <= FEEDTHROUGH_AR;
             r_state_q   <= FEEDTHROUGH_R;
             read_data_q <= '0;
+            r_resp_q    <= '0;
+            r_user_q    <= '0;
             read_done_q <= 1'b0;
         end else begin
             ar_state_q  <= ar_state_d;
             r_state_q   <= r_state_d;
             read_data_q <= read_data_d;
+            r_resp_q    <= r_resp_d;
+            r_user_q    <= r_user_d;
             read_done_q <= read_done_d;
         end
     end
