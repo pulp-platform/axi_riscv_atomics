@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 
 ## Unreleased
 
+## v0.2.1 - 2019-02-25
+
 ### Fixed
 - `axi_riscv_amos`: Fixed timing of R response (#10).
 
