@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 
 ## Unreleased
 
+### Added
+- Add testbench for `axi_riscv_atomics`
+
 ## v0.2.2 - 2019-02-28
 
 ### Changed
