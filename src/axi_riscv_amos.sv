@@ -151,8 +151,8 @@ module axi_riscv_amos #(
     typedef enum logic [2:0] { FEEDTHROUGH_W, WAIT_DATA_W, WAIT_RESULT_W, WAIT_CHANNEL_W, SEND_W } w_state_t;
     w_state_t    w_state_d, w_state_q;
 
-    typedef enum logic [1:0] { FEEDTHROUGH_B, WAIT_B, SEND_B, VALID_REQ } b_state_t;
-    b_state_t   b_state_d, b_state_q;
+    typedef enum logic [1:0] { FEEDTHROUGH_B, WAIT_COMPLETE_B, WAIT_CHANNEL_B, SEND_B } b_state_t;
+    b_state_t    b_state_d, b_state_q;
 
     typedef enum logic [1:0] { FEEDTHROUGH_AR, WAIT_AR, REQ_AR } ar_state_t;
     ar_state_t  ar_state_d, ar_state_q;
@@ -562,60 +562,64 @@ module axi_riscv_amos #(
     =                                 B                                  =
     ====================================================================*/
     always_comb begin : axi_b_channel
-        // Defaults
-        mst_b_ready_o  = slv_b_ready_i;
-        slv_b_id_o     = mst_b_id_i;
-        slv_b_resp_o   = mst_b_resp_i;
-        slv_b_user_o   = mst_b_user_i;
-        slv_b_valid_o  = mst_b_valid_i;
+        // Defaults AXI Bus
+        mst_b_ready_o = slv_b_ready_i;
+        slv_b_id_o    = mst_b_id_i;
+        slv_b_resp_o  = mst_b_resp_i;
+        slv_b_user_o  = mst_b_user_i;
+        slv_b_valid_o = mst_b_valid_i;
         // State Machine
-        b_state_d    = b_state_q;
+        b_state_d     = b_state_q;
 
         unique case (b_state_q)
 
             FEEDTHROUGH_B: begin
                 if (adapter_ready) begin
                     if (atop_valid_d == VALID || atop_valid_d == STORE) begin
-                        b_state_d = VALID_REQ;
+                        // Wait until write is complete
+                        b_state_d = WAIT_COMPLETE_B;
                     end else if (atop_valid_d == INVALID) begin
-                        // Inject B resp
-                        // Check if the B channel is free
-                        if (mst_b_valid_i) begin
-                            b_state_d   = WAIT_B;
-                        end else begin
-                            mst_b_ready_o  = 1'b0;
+                        // Inject B error resp once the channel is free
+                        if (b_free) begin
+                            // Block downstream
+                            mst_b_ready_o = 1'b0;
                             // Write B response
-                            slv_b_id_o     = slv_aw_id_i;
-                            slv_b_resp_o   = axi_pkg::RESP_SLVERR;
-                            slv_b_valid_o  = 1'b1;
+                            slv_b_valid_o = 1'b1;
+                            slv_b_id_o    = slv_aw_id_i;
+                            slv_b_resp_o  = axi_pkg::RESP_SLVERR;
+                            slv_b_user_o  = '0;
                             if (!slv_b_ready_i) begin
                                 b_state_d = SEND_B;
                             end
+                        end else begin
+                            b_state_d = WAIT_CHANNEL_B;
                         end
                     end
                 end
             end // FEEDTHROUGH_B
 
-            WAIT_B, SEND_B: begin
+            WAIT_CHANNEL_B, SEND_B: begin
                 if (b_free || (b_state_q == SEND_B)) begin
-                    mst_b_ready_o  = 1'b0;
+                    // Block downstream
+                    mst_b_ready_o = 1'b0;
                     // Write B response
-                    slv_b_id_o     = id_q;
-                    slv_b_resp_o   = axi_pkg::RESP_SLVERR;
-                    slv_b_valid_o  = 1'b1;
+                    slv_b_valid_o = 1'b1;
+                    slv_b_id_o    = id_q;
+                    slv_b_resp_o  = axi_pkg::RESP_SLVERR;
+                    slv_b_user_o  = '0;
                     if (slv_b_ready_i) begin
                         b_state_d = FEEDTHROUGH_B;
                     end else begin
                         b_state_d = SEND_B;
                     end
                 end
-            end // WAIT_B
+            end // WAIT_CHANNEL_B, SEND_B
 
-            VALID_REQ: begin
-                if (mst_b_valid_i && mst_b_id_i == id_q) begin
+            WAIT_COMPLETE_B: begin
+                if (mst_b_valid_i && (mst_b_id_i == id_q)) begin
                     b_state_d = FEEDTHROUGH_B;
                 end
-            end // VALID_REQ
+            end // WAIT_COMPLETE_B
 
             default: b_state_d = FEEDTHROUGH_B;
 
@@ -864,7 +868,7 @@ module axi_riscv_amos #(
 
             WAIT_R, SEND_R: begin
                 // Wait for the R channel to become free and B response to be valid
-                if ((r_free && (b_state_q != VALID_REQ)) || (r_state_q == SEND_R)) begin
+                if ((r_free && (b_state_q != WAIT_COMPLETE_B)) || (r_state_q == SEND_R)) begin
                     // Block memory
                     mst_r_ready_o = 1'b0;
                     // Send R response
