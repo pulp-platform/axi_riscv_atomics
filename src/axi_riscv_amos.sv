@@ -185,6 +185,7 @@ module axi_riscv_amos #(
     logic                               w_d_valid_d,    w_d_valid_q,    // AMO operand valid
                                         r_d_valid_d,    r_d_valid_q;    // Data from memory valid
     // Counters
+    logic [OUTSTND_BURSTS_WIDTH-1:0]    aw_trans_d,     aw_trans_q;     // AW transaction in flight downstream
     logic [OUTSTND_BURSTS_WIDTH-1:0]    w_cnt_d,        w_cnt_q;        // Outstanding W beats
     logic [OUTSTND_BURSTS_WIDTH-1:0]    w_cnt_req_d,    w_cnt_req_q;    // W beats until AMO can read W
     logic [OUTSTND_BURSTS_WIDTH-1:0]    w_cnt_inj_d,    w_cnt_inj_q;    // W beats until AMO can insert its W
@@ -337,8 +338,12 @@ module axi_riscv_amos #(
             // Block if atomic request
             mst_aw_valid_o = 1'b0;
             slv_aw_ready_o = 1'b0;
-        end else if (w_cnt_q == AXI_MAX_WRITE_TXNS) begin
+        end else if (w_cnt_q == AXI_MAX_WRITE_TXNS || aw_trans_q == AXI_MAX_WRITE_TXNS) begin
             // Block if counter is overflowing
+            mst_aw_valid_o = 1'b0;
+            slv_aw_ready_o = 1'b0;
+        end else if (ar_state_q != FEEDTHROUGH_AR) begin
+            // Block if the adapter is in force wait-free mode
             mst_aw_valid_o = 1'b0;
             slv_aw_ready_o = 1'b0;
         end else if (slv_aw_valid_i && transaction_collision && !adapter_ready) begin
@@ -632,14 +637,19 @@ module axi_riscv_amos #(
         endcase
     end // axi_b_channel
 
-    // Keep track of outstanding downstream write bursts and responses.
+    // Keep track of AW requests missing a W and of downstream transactions
     always_comb begin
-        w_cnt_d = w_cnt_q;
+        w_cnt_d    = w_cnt_q;
+        aw_trans_d = aw_trans_q;
         if (mst_aw_valid_o && mst_aw_ready_i) begin
-            w_cnt_d += 1;
+            w_cnt_d    += 1;
+            aw_trans_d += 1;
         end
         if (mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
-            w_cnt_d -= 1;
+            w_cnt_d    -= 1;
+        end
+        if (mst_b_valid_i && mst_b_ready_o) begin
+            aw_trans_d -= 1;
         end
     end
 
@@ -648,6 +658,7 @@ module axi_riscv_amos #(
             aw_state_q  <= FEEDTHROUGH_AW;
             w_state_q   <= FEEDTHROUGH_W;
             b_state_q   <= FEEDTHROUGH_B;
+            aw_trans_q  <= '0;
             w_cnt_q     <= '0;
             w_cnt_req_q <= '0;
             w_cnt_inj_q <= '0;
@@ -669,6 +680,7 @@ module axi_riscv_amos #(
             aw_state_q  <= aw_state_d;
             w_state_q   <= w_state_d;
             b_state_q   <= b_state_d;
+            aw_trans_q  <= aw_trans_d;
             w_cnt_q     <= w_cnt_d;
             w_cnt_req_q <= w_cnt_req_d;
             w_cnt_inj_q <= w_cnt_inj_d;
@@ -723,7 +735,7 @@ module axi_riscv_amos #(
 
                 if (adapter_ready) begin
                     if (atop_valid_d == LOAD | atop_valid_d == STORE) begin
-                        if (ar_free) begin
+                        if (ar_free && (aw_trans_q == 0)) begin
                             // Acquire channel
                             slv_ar_ready_o  = 1'b0;
                             // Immediately start read request
@@ -753,7 +765,7 @@ module axi_riscv_amos #(
 
             WAIT_CHANNEL_AR, SEND_AR: begin
                 // Issue read request
-                if (ar_free || (ar_state_q == SEND_AR)) begin
+                if ((ar_free  && (aw_trans_q == 0)) || (ar_state_q == SEND_AR)) begin
                     // Inject read request
                     mst_ar_valid_o  = 1'b1;
                     mst_ar_addr_o   = addr_q;
