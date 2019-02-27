@@ -148,8 +148,8 @@ module axi_riscv_amos #(
     typedef enum logic [1:0] { FEEDTHROUGH_AW, WAIT_RESULT_AW, SEND_AW } aw_state_t;
     aw_state_t   aw_state_d, aw_state_q;
 
-    typedef enum logic [2:0] { FEEDTHROUGH_W, WAIT_DATA, W_WAIT_RESULT, W_WAIT_CHANNEL, SEND_W } w_state_t;
-    w_state_t   w_state_d, w_state_q;
+    typedef enum logic [2:0] { FEEDTHROUGH_W, WAIT_DATA_W, WAIT_RESULT_W, WAIT_CHANNEL_W, SEND_W } w_state_t;
+    w_state_t    w_state_d, w_state_q;
 
     typedef enum logic [1:0] { FEEDTHROUGH_B, WAIT_B, SEND_B, VALID_REQ } b_state_t;
     b_state_t   b_state_d, b_state_q;
@@ -416,21 +416,23 @@ module axi_riscv_amos #(
     =                                 W                                  =
     ====================================================================*/
     logic [OUTSTND_BURSTS_WIDTH-1:0]  w_cnt_req_d, w_cnt_req_q;
+    logic [AXI_USER_WIDTH-1:0]        w_user_d, w_user_q;
 
     always_comb begin : axi_w_channel
-        // Defaults
+        // Defaults AXI Bus
         mst_w_data_o = slv_w_data_i;
         mst_w_strb_o = slv_w_strb_i;
         mst_w_last_o = slv_w_last_i;
         mst_w_user_o = slv_w_user_i;
-        // Non-AXI signals
+        // Defaults FF
         strb_d       = strb_q;
+        w_user_d     = w_user_q;
         atop_data_d  = atop_data_q;
         write_data_d = write_data_q;
         data_valid_d = data_valid_q;
+        w_cnt_req_d  = w_cnt_req_q;
         // State Machine
-        w_state_d   = w_state_q;
-        w_cnt_req_d = w_cnt_req_q;
+        w_state_d    = w_state_q;
 
         // Default control
         // Make sure no data is sent without knowing if it's atomic
@@ -462,12 +464,13 @@ module axi_riscv_amos #(
                                 if (atop_valid_d != INVALID) begin
                                     atop_data_d  = slv_w_data_i;
                                     strb_d       = slv_w_strb_i;
+                                    w_user_d     = slv_w_user_i;
                                     data_valid_d = 1'b1;
-                                    w_state_d    = W_WAIT_RESULT;
+                                    w_state_d    = WAIT_RESULT_W;
                                 end
                             end else begin
                                 w_cnt_req_d = '0;
-                                w_state_d   = WAIT_DATA;
+                                w_state_d   = WAIT_DATA_W;
                             end
                         end else begin
                             // Remember the amount of outstanding bursts and count down
@@ -476,13 +479,13 @@ module axi_riscv_amos #(
                             end else begin
                                 w_cnt_req_d = w_cnt_q;
                             end
-                            w_state_d   = WAIT_DATA;
+                            w_state_d   = WAIT_DATA_W;
                         end
                     end
                 end
             end // FEEDTHROUGH_W
 
-            WAIT_DATA: begin
+            WAIT_DATA_W: begin
                 // Count W beats until data arrives that belongs to the AMO request
                 if (w_cnt_req_q == 0) begin
                     // Block downstream
@@ -496,69 +499,59 @@ module axi_riscv_amos #(
                         end else begin
                             atop_data_d  = slv_w_data_i;
                             strb_d       = slv_w_strb_i;
+                            w_user_d     = slv_w_user_i;
                             data_valid_d = 1'b1;
-                            w_state_d    = W_WAIT_RESULT;
+                            w_state_d    = WAIT_RESULT_W;
                         end
                     end
                 end else if (mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
                     w_cnt_req_d = w_cnt_req_q - 1;
                 end
-            end
+            end // WAIT_DATA_W
 
-            W_WAIT_RESULT: begin
+            WAIT_RESULT_W: begin
                 // If the result is ready, try to write it
                 if (read_done_q && data_valid_q && aw_free) begin
                     // Check if W channel is free and make sure data is not interleaved
                     write_data_d = alu_result_ext;
                     if (w_free && w_cnt_q == 0) begin
                         // Block
-                        slv_w_ready_o  = 1'b0;
+                        slv_w_ready_o = 1'b0;
                         // Send write data
-                        mst_w_valid_o  = 1'b1;
-                        mst_w_data_o   = alu_result_ext;
-                        mst_w_last_o   = 1'b1;
-                        mst_w_strb_o   = strb_q;
+                        mst_w_valid_o = 1'b1;
+                        mst_w_data_o  = alu_result_ext;
+                        mst_w_last_o  = 1'b1;
+                        mst_w_strb_o  = strb_q;
+                        mst_w_user_o  = w_user_q;
                         if (mst_w_ready_i) begin
                             w_state_d = FEEDTHROUGH_W;
                         end else begin
                             w_state_d = SEND_W;
                         end
                     end else begin
-                        w_state_d = W_WAIT_CHANNEL;
+                        w_state_d = WAIT_CHANNEL_W;
                     end
                 end
-            end // W_WAIT_RESULT
+            end // WAIT_RESULT_W
 
-            W_WAIT_CHANNEL: begin
+            WAIT_CHANNEL_W, SEND_W: begin
                 // Wait to not interleave the data
-                if (w_free && w_cnt_inj_q == 0) begin
+                if ((w_free && w_cnt_inj_q == 0) || (w_state_q == SEND_W)) begin
                     // Block
                     slv_w_ready_o = 1'b0;
                     // Send write data
-                    mst_w_valid_o  = 1'b1;
-                    mst_w_data_o   = write_data_q;
-                    mst_w_last_o   = 1'b1;
-                    mst_w_strb_o   = strb_q;
+                    mst_w_valid_o = 1'b1;
+                    mst_w_data_o  = write_data_q;
+                    mst_w_last_o  = 1'b1;
+                    mst_w_strb_o  = strb_q;
+                    mst_w_user_o  = w_user_q;
                     if (mst_w_ready_i) begin
                         w_state_d = FEEDTHROUGH_W;
                     end else begin
                         w_state_d = SEND_W;
                     end
                 end
-            end // W_WAIT_CHANNEL
-
-            SEND_W: begin
-                // Block
-                slv_w_ready_o = 1'b0;
-                // Send write data
-                mst_w_valid_o  = 1'b1;
-                mst_w_data_o   = write_data_q;
-                mst_w_last_o   = 1'b1;
-                mst_w_strb_o   = strb_q;
-                if (mst_w_ready_i) begin
-                    w_state_d = FEEDTHROUGH_W;
-                end
-            end // SEND_W
+            end // WAIT_CHANNEL_W, SEND_W
 
             default: w_state_d = FEEDTHROUGH_W;
 
@@ -657,6 +650,7 @@ module axi_riscv_amos #(
             qos_q        <= '0;
             region_q     <= '0;
             user_q       <= '0;
+            w_user_q     <= '0;
             atop_data_q  <= '0;
             write_data_q <= '0;
             data_valid_q <= '0;
@@ -677,6 +671,7 @@ module axi_riscv_amos #(
             qos_q        <= qos_d;
             region_q     <= region_d;
             user_q       <= user_d;
+            w_user_q     <= w_user_d;
             atop_data_q  <= atop_data_d;
             write_data_q <= write_data_d;
             data_valid_q <= data_valid_d;
