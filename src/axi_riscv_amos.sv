@@ -157,8 +157,8 @@ module axi_riscv_amos #(
     typedef enum logic [1:0] { FEEDTHROUGH_AR, WAIT_CHANNEL_AR, SEND_AR } ar_state_t;
     ar_state_t   ar_state_d, ar_state_q;
 
-    typedef enum logic [1:0] { FEEDTHROUGH_R, WAIT_DATA_R, WAIT_R, SEND_R } r_state_t;
-    r_state_t   r_state_d, r_state_q;
+    typedef enum logic [1:0] { FEEDTHROUGH_R, WAIT_DATA_R, WAIT_CHANNEL_R, SEND_R } r_state_t;
+    r_state_t    r_state_d, r_state_q;
 
     typedef enum logic [1:0] { NONE, INVALID, VALID, STORE } atop_req_t;
     atop_req_t  atop_valid_d, atop_valid_q;
@@ -783,44 +783,52 @@ module axi_riscv_amos #(
     /*====================================================================
     =                                 R                                  =
     ====================================================================*/
-    always_comb begin : axi_R_channel
-
-        // Feed through the R channel by default
-        mst_r_ready_o   = slv_r_ready_i;
-        slv_r_id_o      = mst_r_id_i;
-        slv_r_data_o    = mst_r_data_i;
-        slv_r_resp_o    = mst_r_resp_i;
-        slv_r_last_o    = mst_r_last_i;
-        slv_r_user_o    = mst_r_user_i;
-        slv_r_valid_o   = mst_r_valid_i;
-
+    always_comb begin : axi_r_channel
+        // Defaults AXI Bus
+        mst_r_ready_o = slv_r_ready_i;
+        slv_r_id_o    = mst_r_id_i;
+        slv_r_data_o  = mst_r_data_i;
+        slv_r_resp_o  = mst_r_resp_i;
+        slv_r_last_o  = mst_r_last_i;
+        slv_r_user_o  = mst_r_user_i;
+        slv_r_valid_o = mst_r_valid_i;
+        // Defaults FF
+        read_data_d   = read_data_q;
+        r_resp_d      = r_resp_q;
+        r_user_d      = r_user_q;
+        read_done_d   = read_done_q;
         // State Machine
-        read_data_d = read_data_q;
-        r_resp_d    = r_resp_q;
-        r_user_d    = r_user_q;
-        read_done_d = read_done_q;
-        r_state_d   = r_state_q;
+        r_state_d     = r_state_q;
 
         unique case (r_state_q)
 
             FEEDTHROUGH_R: begin
                 if (adapter_ready) begin
                     // Reset read flag
-                    read_done_d  = 1'b0;
+                    read_done_d = 1'b0;
 
                     if (atop_valid_d == VALID || atop_valid_d == STORE) begin
                         // Wait for R response to read data
                         r_state_d = WAIT_DATA_R;
                     end else if (atop_valid_d == INVALID) begin
-                        // Send R response
-                        // Check if the R channel is free
+                        // Send R response once channel is free
                         if (r_free) begin
                             // Acquire the R channel
-                            slv_r_valid_o = 1'b0;
+                            // Block downstream
                             mst_r_ready_o = 1'b0;
-                            r_state_d   = SEND_R;
+                            // Send R error response
+                            slv_r_valid_o = 1'b1;
+                            slv_r_data_o  = '0;
+                            slv_r_id_o    = slv_aw_id_i;
+                            slv_r_last_o  = 1'b1;
+                            slv_r_resp_o  = axi_pkg::RESP_SLVERR;
+                            slv_r_user_o  = '0;
+                            if (!slv_r_ready_i) begin
+                                // Hold R response
+                                r_state_d = SEND_R;
+                            end
                         end else begin
-                            r_state_d = WAIT_R;
+                            r_state_d = WAIT_CHANNEL_R;
                         end
                     end
                 end
@@ -838,29 +846,30 @@ module axi_riscv_amos #(
                     r_user_d    = mst_r_user_i;
                     read_done_d = 1'b1;
                     if (atop_valid_q == STORE) begin
-                        r_state_d   = FEEDTHROUGH_R;
+                        r_state_d = FEEDTHROUGH_R;
                     end else begin
                         // Wait for B resp before injecting R
-                        r_state_d  = WAIT_R;
+                        r_state_d = WAIT_CHANNEL_R;
                     end
                 end
             end // WAIT_DATA_R
 
-            WAIT_R, SEND_R: begin
+            WAIT_CHANNEL_R, SEND_R: begin
                 // Wait for the R channel to become free and B response to be valid
+                // TODO: Use b_state_d to be one cycle quicker
                 if ((r_free && (b_state_q != WAIT_COMPLETE_B)) || (r_state_q == SEND_R)) begin
-                    // Block memory
+                    // Block downstream
                     mst_r_ready_o = 1'b0;
                     // Send R response
                     slv_r_valid_o = 1'b1;
                     slv_r_data_o  = read_data_q;
                     slv_r_id_o    = id_q;
+                    slv_r_last_o  = 1'b1;
                     slv_r_resp_o  = r_resp_q;
                     slv_r_user_o  = r_user_q;
-                    slv_r_last_o  = 1'b1;
                     if (atop_valid_q == INVALID) begin
-                        slv_r_resp_o = axi_pkg::RESP_SLVERR;
                         slv_r_data_o = '0;
+                        slv_r_resp_o = axi_pkg::RESP_SLVERR;
                         slv_r_user_o = '0;
                     end
                     if (slv_r_ready_i) begin
@@ -869,12 +878,12 @@ module axi_riscv_amos #(
                         r_state_d = SEND_R;
                     end
                 end
-            end // WAIT_R
+            end // WAIT_CHANNEL_R, SEND_R
 
             default: r_state_d = FEEDTHROUGH_R;
 
         endcase
-    end
+    end // axi_r_channel
 
     always_ff @(posedge clk_i or negedge rst_ni) begin : axi_read_channel_ff
         if(~rst_ni) begin
