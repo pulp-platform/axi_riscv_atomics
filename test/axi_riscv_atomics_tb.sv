@@ -190,7 +190,7 @@ module automatic axi_riscv_atomics_tb;
         // Run tests!
         test_all_amos();
         test_same_address();
-        // test_interleaving(); // Only works on old memory controller
+        test_interleaving(); // Only works on old memory controller
         test_atomic_counter();
         random_amo();
 
@@ -487,16 +487,27 @@ module automatic axi_riscv_atomics_tb;
         $display("Test interleaving of write accesses...\n");
 
         // Initialize memory with 0x12345678 + i
-        for (int i = 0; i < 2*NUM_BURSTS; i++) begin
+        for (int i = 0; i < 3*NUM_BURSTS; i++) begin
             addr = MEM_START_ADDR + (i*SYS_DATA_WIDTH/8);
             axi_dut_master[i].axi_write(addr, INIT_MEM_VAL + i, size, 1, r_data, b_resp);
+        end
+
+        ax_beat.ax_size = size;
+        ax_beat.ax_atop = 6'b000000;
+        // Generate lots of write requests without sending the data yet
+        for (int i = 1; i < NUM_BURSTS; i++) begin
+            // Generate AW request
+            ax_beat.ax_addr = MEM_START_ADDR + (i*AXI_DATA_WIDTH/8);;
+            void'(randomize(id));
+            ax_beat.ax_id = id;
+            axi_dut_master[i].send_aw(ax_beat);
         end
 
         // Generate an ATOP request
         ax_beat.ax_addr = MEM_START_ADDR;
         ax_beat.ax_atop = 6'b100000;
         void'(randomize(id));
-        ax_beat.ax_id = id;
+        ax_beat.ax_id   = id;
         axi_dut_master[0].send_aw(ax_beat);
         // Reset ATOP to regular requests
         ax_beat.ax_atop = 6'b000000;
@@ -513,7 +524,7 @@ module automatic axi_riscv_atomics_tb;
         join_none
 
         // Generate lots of write requests without sending the data yet
-        for (int i = 1; i < NUM_BURSTS; i++) begin
+        for (int i = NUM_BURSTS; i < 2*NUM_BURSTS; i++) begin
             // Generate AW request
             ax_beat.ax_addr = MEM_START_ADDR + (i*AXI_DATA_WIDTH/8);;
             void'(randomize(id));
@@ -523,7 +534,7 @@ module automatic axi_riscv_atomics_tb;
 
         fork
             begin
-                // Send W data
+                // Send W data for AMO
                 w_beat.w_data = ATOP_OPERAND;
                 w_beat.w_last = '1;
                 w_beat.w_strb = '0;
@@ -535,7 +546,7 @@ module automatic axi_riscv_atomics_tb;
         // Keep sending requests and data
         fork
             // Generate further AW requests
-            for (int i = NUM_BURSTS; i < 2*NUM_BURSTS; i++) begin
+            for (int i = 2*NUM_BURSTS; i < 3*NUM_BURSTS; i++) begin
                 // Generate AW request
                 ax_beat.ax_addr = MEM_START_ADDR + (i*AXI_DATA_WIDTH/8);
                 void'(randomize(id));
@@ -545,7 +556,7 @@ module automatic axi_riscv_atomics_tb;
             end
             // Send the W data
             fork
-                for (int i = 1; i < 2*NUM_BURSTS; i++) begin
+                for (int i = 1; i < 3*NUM_BURSTS; i++) begin
                     // Generate W request
                     w_beat.w_data = i;
                     w_beat.w_last = '1;
@@ -553,10 +564,11 @@ module automatic axi_riscv_atomics_tb;
                     w_beat.w_strb = {{SYS_DATA_WIDTH/8}{1'b1}};
                     axi_dut_master[i].send_w(w_beat);
                     @(posedge clk);
+                    @(posedge clk);
                 end
             join_none
             // Accept the B response
-            for (int i = 0; i < 2*NUM_BURSTS; i++) begin
+            for (int i = 0; i < 3*NUM_BURSTS; i++) begin
                 fork
                     automatic int j = i;
                     automatic axi_test::axi_b_beat  #(.IW(AXI_ID_WIDTH_M), .UW(AXI_USER_WIDTH)) b_beat_temp = new;
@@ -564,6 +576,9 @@ module automatic axi_riscv_atomics_tb;
                 join_none
             end
         join
+
+        // Wait for AMO to finish
+        wait fork;
 
         // Check result
         // Read result of ATOP
@@ -579,7 +594,7 @@ module automatic axi_riscv_atomics_tb;
         end
 
         // Read all other writes
-        for (int i = 1; i < 2*NUM_BURSTS; i++) begin
+        for (int i = 1; i < 3*NUM_BURSTS; i++) begin
             // Generate AW request
             ax_beat.ax_addr = MEM_START_ADDR + (i*AXI_DATA_WIDTH/8);;
             void'(randomize(id));
@@ -599,7 +614,7 @@ module automatic axi_riscv_atomics_tb;
     // Test multiple atomic accesses to the same address
     task automatic test_atomic_counter();
         // Parameters
-        parameter NUM_ITERATION = 1000;
+        parameter NUM_ITERATION = 100;
         parameter COUNTER_ADDR  = 'h01002000;
         // Variables
         automatic logic [SYS_DATA_WIDTH-1:0] r_data;
