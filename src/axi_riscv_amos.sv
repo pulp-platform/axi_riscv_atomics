@@ -154,8 +154,8 @@ module axi_riscv_amos #(
     typedef enum logic [1:0] { FEEDTHROUGH_B, WAIT_COMPLETE_B, WAIT_CHANNEL_B, SEND_B } b_state_t;
     b_state_t    b_state_d, b_state_q;
 
-    typedef enum logic [1:0] { FEEDTHROUGH_AR, WAIT_AR, REQ_AR } ar_state_t;
-    ar_state_t  ar_state_d, ar_state_q;
+    typedef enum logic [1:0] { FEEDTHROUGH_AR, WAIT_CHANNEL_AR, SEND_AR } ar_state_t;
+    ar_state_t   ar_state_d, ar_state_q;
 
     typedef enum logic [1:0] { FEEDTHROUGH_R, WAIT_DATA_R, WAIT_R, SEND_R } r_state_t;
     r_state_t   r_state_d, r_state_q;
@@ -690,7 +690,8 @@ module axi_riscv_amos #(
     /*====================================================================
     =                                AR                                  =
     ====================================================================*/
-    always_comb begin : axi_AR_channel
+    always_comb begin : axi_ar_channel
+        // Defaults AXI Bus
         mst_ar_id_o     = slv_ar_id_i;
         mst_ar_addr_o   = slv_ar_addr_i;
         mst_ar_len_o    = slv_ar_len_i;
@@ -704,33 +705,29 @@ module axi_riscv_amos #(
         mst_ar_user_o   = slv_ar_user_i;
         mst_ar_valid_o  = 1'b0;
         slv_ar_ready_o  = 1'b0;
-
         // State Machine
-        ar_state_d  = ar_state_q;
+        ar_state_d      = ar_state_q;
 
         unique case (ar_state_q)
 
             FEEDTHROUGH_AR: begin
                 // Feed through
-                mst_ar_valid_o  = slv_ar_valid_i;
-                slv_ar_ready_o  = mst_ar_ready_i;
+                mst_ar_valid_o = slv_ar_valid_i;
+                slv_ar_ready_o = mst_ar_ready_i;
 
                 if (adapter_ready) begin
                     if (atop_valid_d == VALID | atop_valid_d == STORE) begin
-                        if (slv_ar_valid_i) begin
-                            // Wait until AR is free
-                            ar_state_d   = WAIT_AR;
-                        end else begin
+                        if (ar_free) begin
                             // Acquire channel
                             slv_ar_ready_o  = 1'b0;
                             // Immediately start read request
+                            mst_ar_valid_o  = 1'b1;
                             mst_ar_addr_o   = slv_aw_addr_i;
                             mst_ar_id_o     = slv_aw_id_i;
                             mst_ar_len_o    = 8'h00;
                             mst_ar_size_o   = slv_aw_size_i;
                             mst_ar_burst_o  = 2'b00;
                             mst_ar_lock_o   = 1'h0;
-                            mst_ar_valid_o  = 1'b1;
                             mst_ar_cache_o  = slv_aw_cache_i;
                             mst_ar_prot_o   = slv_aw_prot_i;
                             mst_ar_qos_o    = slv_aw_qos_i;
@@ -738,24 +735,27 @@ module axi_riscv_amos #(
                             mst_ar_user_o   = slv_aw_user_i;
                             if (!mst_ar_ready_i) begin
                                 // Hold read request but do not depend on AW
-                                ar_state_d = REQ_AR;
+                                ar_state_d = SEND_AR;
                             end
+                        end else begin
+                            // Wait until AR is free
+                            ar_state_d   = WAIT_CHANNEL_AR;
                         end
                     end
                 end
             end // FEEDTHROUGH_AR
 
-            WAIT_AR: begin
+            WAIT_CHANNEL_AR, SEND_AR: begin
                 // Issue read request
-                if (ar_free) begin
+                if (ar_free || (ar_state_q == SEND_AR)) begin
                     // Inject read request
+                    mst_ar_valid_o  = 1'b1;
                     mst_ar_addr_o   = addr_q;
                     mst_ar_id_o     = id_q;
                     mst_ar_len_o    = 8'h00;
                     mst_ar_size_o   = size_q;
                     mst_ar_burst_o  = 2'b00;
                     mst_ar_lock_o   = 1'h0;
-                    mst_ar_valid_o  = 1'b1;
                     mst_ar_cache_o  = cache_q;
                     mst_ar_prot_o   = prot_q;
                     mst_ar_qos_o    = qos_q;
@@ -766,39 +766,19 @@ module axi_riscv_amos #(
                         ar_state_d = FEEDTHROUGH_AR;
                     end else begin
                         // Hold read request
-                        ar_state_d = REQ_AR;
+                        ar_state_d = SEND_AR;
                     end
                 end else begin
                     // Wait until AR is free
                     mst_ar_valid_o = slv_ar_valid_i;
                     slv_ar_ready_o = mst_ar_ready_i;
                 end
-            end // WAIT_AR
-
-            REQ_AR: begin
-                // Inject read request
-                mst_ar_addr_o   = addr_q;
-                mst_ar_id_o     = id_q;
-                mst_ar_len_o    = 8'h00;
-                mst_ar_size_o   = size_q;
-                mst_ar_burst_o  = 2'b00;
-                mst_ar_lock_o   = 1'h0;
-                mst_ar_valid_o  = 1'b1;
-                mst_ar_cache_o  = cache_q;
-                mst_ar_prot_o   = prot_q;
-                mst_ar_qos_o    = qos_q;
-                mst_ar_region_o = region_q;
-                mst_ar_user_o   = user_q;
-                if (mst_ar_ready_i) begin
-                    // Request acknowledged
-                    ar_state_d = FEEDTHROUGH_AR;
-                end
-            end // REQ_AR
+            end // WAIT_CHANNEL_AR, SEND_AR
 
             default: ar_state_d = FEEDTHROUGH_AR;
 
         endcase
-    end
+    end // axi_ar_channel
 
     /*====================================================================
     =                                 R                                  =
