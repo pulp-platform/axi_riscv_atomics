@@ -160,35 +160,55 @@ module axi_riscv_amos #(
     typedef enum logic [1:0] { FEEDTHROUGH_R, WAIT_DATA_R, WAIT_CHANNEL_R, SEND_R } r_state_t;
     r_state_t    r_state_d, r_state_q;
 
-    typedef enum logic [1:0] { NONE, INVALID, VALID, STORE } atop_req_t;
-    atop_req_t  atop_valid_d, atop_valid_q;
+    typedef enum logic [1:0] { NONE, INVALID, LOAD, STORE } atop_req_t;
+    atop_req_t   atop_valid_d, atop_valid_q;
 
     // Signal declarations
-    logic [OUTSTND_BURSTS_WIDTH-1:0]    w_cnt_d, w_cnt_q;
-    logic [AXI_ADDR_WIDTH-1:0]          addr_d, addr_q;
-    logic [AXI_ID_WIDTH-1:0]            id_d, id_q;
-    logic [2:0]                         size_d, size_q;
-    logic [AXI_STRB_WIDTH-1:0]          strb_d, strb_q;
-    logic [3:0]                         cache_d, cache_q;
-    logic [2:0]                         prot_d, prot_q;
-    logic [3:0]                         qos_d, qos_q;
-    logic [3:0]                         region_d, region_q;
-    logic [AXI_USER_WIDTH-1:0]          user_d, user_q;
-    logic [1:0]                         r_resp_d, r_resp_q;
-    logic [AXI_USER_WIDTH-1:0]          r_user_d, r_user_q;
-    logic [AXI_DATA_WIDTH-1:0]          atop_data_d, atop_data_q;
-    logic [AXI_DATA_WIDTH-1:0]          read_data_d, read_data_q;
-    logic [AXI_DATA_WIDTH-1:0]          write_data_d, write_data_q;
-    logic [5:0]                         atop_d, atop_q;
-    logic                               data_valid_d, data_valid_q;
-
-    logic                               read_done_d, read_done_q;
+    // Transaction FF
+    logic [AXI_ADDR_WIDTH-1:0]          addr_d,         addr_q;
+    logic [AXI_ID_WIDTH-1:0]            id_d,           id_q;
+    logic [AXI_STRB_WIDTH-1:0]          strb_d,         strb_q;
+    logic [2:0]                         size_d,         size_q;
+    logic [5:0]                         atop_d,         atop_q;
+    logic [3:0]                         cache_d,        cache_q;
+    logic [2:0]                         prot_d,         prot_q;
+    logic [3:0]                         qos_d,          qos_q;
+    logic [3:0]                         region_d,       region_q;
+    logic [1:0]                         r_resp_d,       r_resp_q;
+    logic [AXI_USER_WIDTH-1:0]          aw_user_d,      aw_user_q,
+                                        w_user_d,       w_user_q,
+                                        r_user_d,       r_user_q;
+    // Data FF
+    logic [AXI_DATA_WIDTH-1:0]          w_data_d,       w_data_q;       // AMO operand
+    logic [AXI_DATA_WIDTH-1:0]          r_data_d,       r_data_q;       // Data from memory
+    logic [AXI_DATA_WIDTH-1:0]          result_d,       result_q;       // Result of AMO operation
+    logic                               w_d_valid_d,    w_d_valid_q,    // AMO operand valid
+                                        r_d_valid_d,    r_d_valid_q;    // Data from memory valid
+    // Counters
+    logic [OUTSTND_BURSTS_WIDTH-1:0]    w_cnt_d,        w_cnt_q;        // Outstanding W beats
+    logic [OUTSTND_BURSTS_WIDTH-1:0]    w_cnt_req_d,    w_cnt_req_q;    // W beats until AMO can read W
+    logic [OUTSTND_BURSTS_WIDTH-1:0]    w_cnt_inj_d,    w_cnt_inj_q;    // W beats until AMO can insert its W
+    // States
     logic                               adapter_ready;
-
-    logic [RISCV_WORD_WIDTH-1:0]    alu_operand_a;
-    logic [RISCV_WORD_WIDTH-1:0]    alu_operand_b;
-    logic [RISCV_WORD_WIDTH-1:0]    alu_result;
-    logic [AXI_DATA_WIDTH-1:0]      alu_result_ext;
+    logic                               transaction_collision;
+    logic                               aw_valid,       aw_ready,       aw_free,
+                                        w_valid,        w_ready,        w_free,
+                                        b_valid,        b_ready,        b_free,
+                                        ar_valid,       ar_ready,       ar_free,
+                                        r_valid,        r_ready,        r_free;
+    // ALU Signals
+    logic [RISCV_WORD_WIDTH-1:0]                        alu_operand_a;
+    logic [RISCV_WORD_WIDTH-1:0]                        alu_operand_b;
+    logic [RISCV_WORD_WIDTH-1:0]                        alu_result;
+    logic [AXI_DATA_WIDTH-1:0]                          alu_result_ext;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0]     op_a;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0]     op_b;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0]     op_a_sign_ext;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0]     op_b_sign_ext;
+    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0]     res;
+    logic [AXI_STRB_WIDTH-1:0][7:0]                     strb_ext;
+    logic                                               sign_a;
+    logic                                               sign_b;
 
     /**
      * Calculate ready signals and channel states
@@ -202,13 +222,6 @@ module axi_riscv_amos #(
                            ( r_state_q == FEEDTHROUGH_R );
 
     // Calculate if the channels are free
-    logic aw_valid, aw_ready;
-    logic  w_valid,  w_ready;
-    logic  b_valid,  b_ready;
-    logic ar_valid, ar_ready;
-    logic  r_valid,  r_ready;
-    logic aw_free, w_free, b_free, ar_free, r_free;
-
     assign aw_free = ~aw_valid | aw_ready;
     assign  w_free = ~ w_valid |  w_ready;
     assign  b_free = ~ b_valid |  b_ready;
@@ -244,8 +257,6 @@ module axi_riscv_amos #(
     // Calculate if the request interferes with the ongoing atomic transaction
     // The protected bytes go from addr_q up to addr_q + (1 << size_q) - 1
     // TODO Bursts need special treatment
-    // TODO Some memory controller round the address down
-    logic transaction_collision;
     assign transaction_collision = (slv_aw_addr_i < (     addr_q + (8'h01 <<      size_q))) &
                                    (     addr_q < (slv_aw_addr_i + (8'h01 << slv_aw_size_i)));
 
@@ -259,7 +270,7 @@ module axi_riscv_amos #(
                 // Valid load operation
                 if ((slv_aw_atop_i      ==  axi_pkg::ATOP_ATOMICSWAP) ||
                     (slv_aw_atop_i[5:3] == {axi_pkg::ATOP_ATOMICLOAD , axi_pkg::ATOP_LITTLE_END})) begin
-                    atop_valid_d = VALID;
+                    atop_valid_d = LOAD;
                 end
                 // Valid store operation
                 if (slv_aw_atop_i[5:3] == {axi_pkg::ATOP_ATOMICSTORE, axi_pkg::ATOP_LITTLE_END}) begin
@@ -293,8 +304,6 @@ module axi_riscv_amos #(
     /*====================================================================
     =                                 AW                                 =
     ====================================================================*/
-    logic [OUTSTND_BURSTS_WIDTH-1:0]  w_cnt_inj_d, w_cnt_inj_q;
-
     always_comb begin : axi_aw_channel
         // Defaults AXI Bus
         mst_aw_id_o     = slv_aw_id_i;
@@ -318,7 +327,7 @@ module axi_riscv_amos #(
         prot_d          = prot_q;
         qos_d           = qos_q;
         region_d        = region_q;
-        user_d          = user_q;
+        aw_user_d       = aw_user_q;
         w_cnt_inj_d     = w_cnt_inj_q;
         // State Machine
         aw_state_d      = aw_state_q;
@@ -355,15 +364,15 @@ module axi_riscv_amos #(
                     // Acknowledge atomic transaction
                     slv_aw_ready_o = 1'b1;
                     // Remember request
-                    atop_d   = slv_aw_atop_i;
-                    addr_d   = slv_aw_addr_i;
-                    id_d     = slv_aw_id_i;
-                    size_d   = slv_aw_size_i;
-                    cache_d  = slv_aw_cache_i;
-                    prot_d   = slv_aw_prot_i;
-                    qos_d    = slv_aw_qos_i;
-                    region_d = slv_aw_region_i;
-                    user_d   = slv_aw_user_i;
+                    atop_d    = slv_aw_atop_i;
+                    addr_d    = slv_aw_addr_i;
+                    id_d      = slv_aw_id_i;
+                    size_d    = slv_aw_size_i;
+                    cache_d   = slv_aw_cache_i;
+                    prot_d    = slv_aw_prot_i;
+                    qos_d     = slv_aw_qos_i;
+                    region_d  = slv_aw_region_i;
+                    aw_user_d = slv_aw_user_i;
                     // If valid AMO --> wait for result
                     if (atop_valid_d != INVALID) begin
                         aw_state_d = WAIT_RESULT_AW;
@@ -374,7 +383,7 @@ module axi_riscv_amos #(
 
             WAIT_RESULT_AW, SEND_AW: begin
                 // If the result is ready and the channel is free --> inject AW request
-                if ((read_done_q && data_valid_q && aw_free) || (aw_state_q == SEND_AW)) begin
+                if ((r_d_valid_q && w_d_valid_q && aw_free) || (aw_state_q == SEND_AW)) begin
                     // Block
                     slv_aw_ready_o  = 1'b0;
                     // Make write request
@@ -389,7 +398,7 @@ module axi_riscv_amos #(
                     mst_aw_prot_o   = prot_q;
                     mst_aw_qos_o    = qos_q;
                     mst_aw_region_o = region_q;
-                    mst_aw_user_o   = user_q;
+                    mst_aw_user_o   = aw_user_q;
                     // Check if request is acknowledged
                     if (mst_aw_ready_i) begin
                         aw_state_d = FEEDTHROUGH_AW;
@@ -415,9 +424,6 @@ module axi_riscv_amos #(
     /*====================================================================
     =                                 W                                  =
     ====================================================================*/
-    logic [OUTSTND_BURSTS_WIDTH-1:0]  w_cnt_req_d, w_cnt_req_q;
-    logic [AXI_USER_WIDTH-1:0]        w_user_d, w_user_q;
-
     always_comb begin : axi_w_channel
         // Defaults AXI Bus
         mst_w_data_o = slv_w_data_i;
@@ -427,9 +433,9 @@ module axi_riscv_amos #(
         // Defaults FF
         strb_d       = strb_q;
         w_user_d     = w_user_q;
-        atop_data_d  = atop_data_q;
-        write_data_d = write_data_q;
-        data_valid_d = data_valid_q;
+        w_data_d     = w_data_q;
+        result_d     = result_q;
+        w_d_valid_d  = w_d_valid_q;
         w_cnt_req_d  = w_cnt_req_q;
         // State Machine
         w_state_d    = w_state_q;
@@ -450,8 +456,8 @@ module axi_riscv_amos #(
             FEEDTHROUGH_W: begin
                 if (adapter_ready) begin
                     // Reset read flag
-                    data_valid_d = 1'b0;
-                    write_data_d = '0;
+                    w_d_valid_d = 1'b0;
+                    result_d    = '0;
 
                     if (atop_valid_d != NONE) begin
                         // Check if data is also available and does not belong to previous request
@@ -462,11 +468,11 @@ module axi_riscv_amos #(
                             slv_w_ready_o  = 1'b1;
                             if (slv_w_valid_i) begin
                                 if (atop_valid_d != INVALID) begin
-                                    atop_data_d  = slv_w_data_i;
-                                    strb_d       = slv_w_strb_i;
-                                    w_user_d     = slv_w_user_i;
-                                    data_valid_d = 1'b1;
-                                    w_state_d    = WAIT_RESULT_W;
+                                    w_data_d    = slv_w_data_i;
+                                    strb_d      = slv_w_strb_i;
+                                    w_user_d    = slv_w_user_i;
+                                    w_d_valid_d = 1'b1;
+                                    w_state_d   = WAIT_RESULT_W;
                                 end
                             end else begin
                                 w_cnt_req_d = '0;
@@ -497,11 +503,11 @@ module axi_riscv_amos #(
                         if (atop_valid_q == INVALID) begin
                             w_state_d    = FEEDTHROUGH_W;
                         end else begin
-                            atop_data_d  = slv_w_data_i;
-                            strb_d       = slv_w_strb_i;
-                            w_user_d     = slv_w_user_i;
-                            data_valid_d = 1'b1;
-                            w_state_d    = WAIT_RESULT_W;
+                            w_data_d    = slv_w_data_i;
+                            strb_d      = slv_w_strb_i;
+                            w_user_d    = slv_w_user_i;
+                            w_d_valid_d = 1'b1;
+                            w_state_d   = WAIT_RESULT_W;
                         end
                     end
                 end else if (mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
@@ -511,9 +517,9 @@ module axi_riscv_amos #(
 
             WAIT_RESULT_W: begin
                 // If the result is ready, try to write it
-                if (read_done_q && data_valid_q && aw_free) begin
+                if (r_d_valid_q && w_d_valid_q && aw_free) begin
                     // Check if W channel is free and make sure data is not interleaved
-                    write_data_d = alu_result_ext;
+                    result_d = alu_result_ext;
                     if (w_free && w_cnt_q == 0) begin
                         // Block
                         slv_w_ready_o = 1'b0;
@@ -541,7 +547,7 @@ module axi_riscv_amos #(
                     slv_w_ready_o = 1'b0;
                     // Send write data
                     mst_w_valid_o = 1'b1;
-                    mst_w_data_o  = write_data_q;
+                    mst_w_data_o  = result_q;
                     mst_w_last_o  = 1'b1;
                     mst_w_strb_o  = strb_q;
                     mst_w_user_o  = w_user_q;
@@ -575,7 +581,7 @@ module axi_riscv_amos #(
 
             FEEDTHROUGH_B: begin
                 if (adapter_ready) begin
-                    if (atop_valid_d == VALID || atop_valid_d == STORE) begin
+                    if (atop_valid_d == LOAD || atop_valid_d == STORE) begin
                         // Wait until write is complete
                         b_state_d = WAIT_COMPLETE_B;
                     end else if (atop_valid_d == INVALID) begin
@@ -639,47 +645,47 @@ module axi_riscv_amos #(
 
     always_ff @(posedge clk_i or negedge rst_ni) begin : axi_write_channel_ff
         if(~rst_ni) begin
-            aw_state_q   <= FEEDTHROUGH_AW;
-            w_state_q    <= FEEDTHROUGH_W;
-            b_state_q    <= FEEDTHROUGH_B;
-            w_cnt_q      <= '0;
-            w_cnt_req_q  <= '0;
-            w_cnt_inj_q  <= '0;
-            addr_q       <= '0;
-            id_q         <= '0;
-            size_q       <= '0;
-            strb_q       <= '0;
-            cache_q      <= '0;
-            prot_q       <= '0;
-            qos_q        <= '0;
-            region_q     <= '0;
-            user_q       <= '0;
-            w_user_q     <= '0;
-            atop_data_q  <= '0;
-            write_data_q <= '0;
-            data_valid_q <= '0;
-            atop_q       <= 6'b0;
+            aw_state_q  <= FEEDTHROUGH_AW;
+            w_state_q   <= FEEDTHROUGH_W;
+            b_state_q   <= FEEDTHROUGH_B;
+            w_cnt_q     <= '0;
+            w_cnt_req_q <= '0;
+            w_cnt_inj_q <= '0;
+            addr_q      <= '0;
+            id_q        <= '0;
+            size_q      <= '0;
+            strb_q      <= '0;
+            cache_q     <= '0;
+            prot_q      <= '0;
+            qos_q       <= '0;
+            region_q    <= '0;
+            aw_user_q   <= '0;
+            w_user_q    <= '0;
+            w_data_q    <= '0;
+            result_q    <= '0;
+            w_d_valid_q <= '0;
+            atop_q      <= 6'b0;
         end else begin
-            aw_state_q   <= aw_state_d;
-            w_state_q    <= w_state_d;
-            b_state_q    <= b_state_d;
-            w_cnt_q      <= w_cnt_d;
-            w_cnt_req_q  <= w_cnt_req_d;
-            w_cnt_inj_q  <= w_cnt_inj_d;
-            addr_q       <= addr_d;
-            id_q         <= id_d;
-            size_q       <= size_d;
-            strb_q       <= strb_d;
-            cache_q      <= cache_d;
-            prot_q       <= prot_d;
-            qos_q        <= qos_d;
-            region_q     <= region_d;
-            user_q       <= user_d;
-            w_user_q     <= w_user_d;
-            atop_data_q  <= atop_data_d;
-            write_data_q <= write_data_d;
-            data_valid_q <= data_valid_d;
-            atop_q       <= atop_d;
+            aw_state_q  <= aw_state_d;
+            w_state_q   <= w_state_d;
+            b_state_q   <= b_state_d;
+            w_cnt_q     <= w_cnt_d;
+            w_cnt_req_q <= w_cnt_req_d;
+            w_cnt_inj_q <= w_cnt_inj_d;
+            addr_q      <= addr_d;
+            id_q        <= id_d;
+            size_q      <= size_d;
+            strb_q      <= strb_d;
+            cache_q     <= cache_d;
+            prot_q      <= prot_d;
+            qos_q       <= qos_d;
+            region_q    <= region_d;
+            aw_user_q   <= aw_user_d;
+            w_user_q    <= w_user_d;
+            w_data_q    <= w_data_d;
+            result_q    <= result_d;
+            w_d_valid_q <= w_d_valid_d;
+            atop_q      <= atop_d;
         end
     end
 
@@ -716,7 +722,7 @@ module axi_riscv_amos #(
                 slv_ar_ready_o = mst_ar_ready_i;
 
                 if (adapter_ready) begin
-                    if (atop_valid_d == VALID | atop_valid_d == STORE) begin
+                    if (atop_valid_d == LOAD | atop_valid_d == STORE) begin
                         if (ar_free) begin
                             // Acquire channel
                             slv_ar_ready_o  = 1'b0;
@@ -760,7 +766,7 @@ module axi_riscv_amos #(
                     mst_ar_prot_o   = prot_q;
                     mst_ar_qos_o    = qos_q;
                     mst_ar_region_o = region_q;
-                    mst_ar_user_o   = user_q;
+                    mst_ar_user_o   = aw_user_q;
                     if (mst_ar_ready_i) begin
                         // Request acknowledged
                         ar_state_d = FEEDTHROUGH_AR;
@@ -793,10 +799,10 @@ module axi_riscv_amos #(
         slv_r_user_o  = mst_r_user_i;
         slv_r_valid_o = mst_r_valid_i;
         // Defaults FF
-        read_data_d   = read_data_q;
+        r_data_d      = r_data_q;
         r_resp_d      = r_resp_q;
         r_user_d      = r_user_q;
-        read_done_d   = read_done_q;
+        r_d_valid_d   = r_d_valid_q;
         // State Machine
         r_state_d     = r_state_q;
 
@@ -805,9 +811,9 @@ module axi_riscv_amos #(
             FEEDTHROUGH_R: begin
                 if (adapter_ready) begin
                     // Reset read flag
-                    read_done_d = 1'b0;
+                    r_d_valid_d = 1'b0;
 
-                    if (atop_valid_d == VALID || atop_valid_d == STORE) begin
+                    if (atop_valid_d == LOAD || atop_valid_d == STORE) begin
                         // Wait for R response to read data
                         r_state_d = WAIT_DATA_R;
                     end else if (atop_valid_d == INVALID) begin
@@ -841,10 +847,10 @@ module axi_riscv_amos #(
                     mst_r_ready_o = 1'b1;
                     slv_r_valid_o = 1'b0;
                     // Store data
-                    read_data_d = mst_r_data_i;
+                    r_data_d    = mst_r_data_i;
                     r_resp_d    = mst_r_resp_i;
                     r_user_d    = mst_r_user_i;
-                    read_done_d = 1'b1;
+                    r_d_valid_d = 1'b1;
                     if (atop_valid_q == STORE) begin
                         r_state_d = FEEDTHROUGH_R;
                     end else begin
@@ -862,7 +868,7 @@ module axi_riscv_amos #(
                     mst_r_ready_o = 1'b0;
                     // Send R response
                     slv_r_valid_o = 1'b1;
-                    slv_r_data_o  = read_data_q;
+                    slv_r_data_o  = r_data_q;
                     slv_r_id_o    = id_q;
                     slv_r_last_o  = 1'b1;
                     slv_r_resp_o  = r_resp_q;
@@ -889,17 +895,17 @@ module axi_riscv_amos #(
         if(~rst_ni) begin
             ar_state_q  <= FEEDTHROUGH_AR;
             r_state_q   <= FEEDTHROUGH_R;
-            read_data_q <= '0;
+            r_data_q    <= '0;
             r_resp_q    <= '0;
             r_user_q    <= '0;
-            read_done_q <= 1'b0;
+            r_d_valid_q <= 1'b0;
         end else begin
             ar_state_q  <= ar_state_d;
             r_state_q   <= r_state_d;
-            read_data_q <= read_data_d;
+            r_data_q    <= r_data_d;
             r_resp_q    <= r_resp_d;
             r_user_q    <= r_user_d;
-            read_done_q <= read_done_d;
+            r_d_valid_q <= r_d_valid_d;
         end
     end
 
@@ -907,19 +913,10 @@ module axi_riscv_amos #(
      * ALU
      */
 
-    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_a;
-    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_b;
-    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_a_sign_ext;
-    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] op_b_sign_ext;
-    logic [AXI_ALU_RATIO-1:0][RISCV_WORD_WIDTH-1:0] res;
-    logic [AXI_STRB_WIDTH-1:0][7:0]                 strb_ext;
-    logic sign_a;
-    logic sign_b;
-
-    assign op_a = read_data_q & strb_ext;
-    assign op_b = atop_data_q & strb_ext;
-    assign sign_a = |(op_a & ~(strb_ext >> 1));
-    assign sign_b = |(op_b & ~(strb_ext >> 1));
+    assign op_a           = r_data_q & strb_ext;
+    assign op_b           = w_data_q & strb_ext;
+    assign sign_a         = |(op_a & ~(strb_ext >> 1));
+    assign sign_b         = |(op_b & ~(strb_ext >> 1));
     assign alu_result_ext = res;
 
     generate
