@@ -145,7 +145,7 @@ module axi_riscv_amos #(
     localparam int unsigned AXI_ALU_RATIO        = AXI_DATA_WIDTH/RISCV_WORD_WIDTH;
 
     // State types
-    typedef enum logic [1:0] { FEEDTHROUGH_AW, WAIT_ALU, WAIT_AW, REQ_AW } aw_state_t;
+    typedef enum logic [1:0] { FEEDTHROUGH_AW, WAIT_RESULT_AW, SEND_AW } aw_state_t;
     aw_state_t   aw_state_d, aw_state_q;
 
     typedef enum logic [2:0] { FEEDTHROUGH_W, WAIT_DATA, W_WAIT_RESULT, W_WAIT_CHANNEL, SEND_W } w_state_t;
@@ -296,7 +296,7 @@ module axi_riscv_amos #(
     logic [OUTSTND_BURSTS_WIDTH-1:0]  w_cnt_inj_d, w_cnt_inj_q;
 
     always_comb begin : axi_aw_channel
-        // Defaults
+        // Defaults AXI Bus
         mst_aw_id_o     = slv_aw_id_i;
         mst_aw_addr_o   = slv_aw_addr_i;
         mst_aw_len_o    = slv_aw_len_i;
@@ -309,24 +309,27 @@ module axi_riscv_amos #(
         mst_aw_region_o = slv_aw_region_i;
         mst_aw_atop_o   = 6'b0;
         mst_aw_user_o   = slv_aw_user_i;
-        // Non-AXI signals
-        addr_d       = addr_q;
-        id_d         = id_q;
-        size_d       = size_q;
-        atop_d       = atop_q;
-        cache_d      = cache_q;
-        prot_d       = prot_q;
-        qos_d        = qos_q;
-        region_d     = region_q;
-        user_d       = user_q;
-        w_cnt_inj_d  = w_cnt_inj_q;
+        // Defaults FF
+        addr_d          = addr_q;
+        id_d            = id_q;
+        size_d          = size_q;
+        atop_d          = atop_q;
+        cache_d         = cache_q;
+        prot_d          = prot_q;
+        qos_d           = qos_q;
+        region_d        = region_q;
+        user_d          = user_q;
+        w_cnt_inj_d     = w_cnt_inj_q;
         // State Machine
-        aw_state_d   = aw_state_q;
+        aw_state_d      = aw_state_q;
 
-        // Default control
-        // Make sure the outstanding beats counter does not overflow
-        if (w_cnt_q == AXI_MAX_WRITE_TXNS || (slv_aw_valid_i && slv_aw_atop_i)) begin
-            // Block if counter is overflowing or atomic request
+        // Default control: Block AW channel if...
+        if (slv_aw_valid_i && slv_aw_atop_i) begin
+            // Block if atomic request
+            mst_aw_valid_o = 1'b0;
+            slv_aw_ready_o = 1'b0;
+        end else if (w_cnt_q == AXI_MAX_WRITE_TXNS) begin
+            // Block if counter is overflowing
             mst_aw_valid_o = 1'b0;
             slv_aw_ready_o = 1'b0;
         end else if (slv_aw_valid_i && transaction_collision && !adapter_ready) begin
@@ -339,104 +342,70 @@ module axi_riscv_amos #(
             slv_aw_ready_o  = mst_aw_ready_i;
         end
 
+        // Count W burst to know when to inject the W data
+        if (w_cnt_inj_q && mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
+            w_cnt_inj_d = w_cnt_inj_q - 1;
+        end
+
         unique case (aw_state_q)
 
             FEEDTHROUGH_AW: begin
                 // Feedthrough slave to master until atomic operation is detected
-                if (slv_aw_valid_i && slv_aw_atop_i) begin
-                    // Do not forward
-                    mst_aw_valid_o = 1'b0;
-                    if (adapter_ready) begin
-                        // Acknowledge atomic transaction
-                        slv_aw_ready_o = 1'b1;
-                        // Remember request
-                        atop_d   = slv_aw_atop_i;
-                        addr_d   = slv_aw_addr_i;
-                        id_d     = slv_aw_id_i;
-                        size_d   = slv_aw_size_i;
-                        cache_d  = slv_aw_cache_i;
-                        prot_d   = slv_aw_prot_i;
-                        qos_d    = slv_aw_qos_i;
-                        region_d = slv_aw_region_i;
-                        user_d   = slv_aw_user_i;
-                        // Go to next state
-                        if (atop_valid_d != INVALID) begin
-                            aw_state_d = WAIT_ALU;
-                        end
-                    end else begin
-                        // Block request
-                        slv_aw_ready_o  = 1'b0;
+                if (slv_aw_valid_i && slv_aw_atop_i && adapter_ready) begin
+                    // Acknowledge atomic transaction
+                    slv_aw_ready_o = 1'b1;
+                    // Remember request
+                    atop_d   = slv_aw_atop_i;
+                    addr_d   = slv_aw_addr_i;
+                    id_d     = slv_aw_id_i;
+                    size_d   = slv_aw_size_i;
+                    cache_d  = slv_aw_cache_i;
+                    prot_d   = slv_aw_prot_i;
+                    qos_d    = slv_aw_qos_i;
+                    region_d = slv_aw_region_i;
+                    user_d   = slv_aw_user_i;
+                    // If valid AMO --> wait for result
+                    if (atop_valid_d != INVALID) begin
+                        aw_state_d = WAIT_RESULT_AW;
                     end
                 end
 
-                // Keep counting the W beats
-                if (w_cnt_inj_q && mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
-                    w_cnt_inj_d = w_cnt_inj_q - 1;
-                end
             end // FEEDTHROUGH_AW
 
-            WAIT_ALU: begin
-                w_cnt_inj_d = 1'b0;
-                // If the result is ready, try to write it
-                if (read_done_q && data_valid_q) begin
-                    // Check if AW channel is free
-                    if (aw_free) begin
-                        // Block
-                        slv_aw_ready_o  = 1'b0;
-                        // Make write request
-                        mst_aw_valid_o  = 1'b1;
-                        mst_aw_addr_o   = addr_q;
-                        mst_aw_len_o    = 8'h00;
-                        mst_aw_id_o     = id_q;
-                        mst_aw_size_o   = size_q;
-                        mst_aw_burst_o  = 2'b00;
-                        mst_aw_lock_o   = 1'b0;
-                        mst_aw_cache_o  = cache_q;
-                        mst_aw_prot_o   = prot_q;
-                        mst_aw_qos_o    = qos_q;
-                        mst_aw_region_o = region_q;
-                        mst_aw_user_o   = user_q;
-                        // Remember outstanding beats before injected request
-                        if (mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
+            WAIT_RESULT_AW, SEND_AW: begin
+                // If the result is ready and the channel is free --> inject AW request
+                if ((read_done_q && data_valid_q && aw_free) || (aw_state_q == SEND_AW)) begin
+                    // Block
+                    slv_aw_ready_o  = 1'b0;
+                    // Make write request
+                    mst_aw_valid_o  = 1'b1;
+                    mst_aw_addr_o   = addr_q;
+                    mst_aw_len_o    = 8'h00;
+                    mst_aw_id_o     = id_q;
+                    mst_aw_size_o   = size_q;
+                    mst_aw_burst_o  = 2'b00;
+                    mst_aw_lock_o   = 1'b0;
+                    mst_aw_cache_o  = cache_q;
+                    mst_aw_prot_o   = prot_q;
+                    mst_aw_qos_o    = qos_q;
+                    mst_aw_region_o = region_q;
+                    mst_aw_user_o   = user_q;
+                    // Check if request is acknowledged
+                    if (mst_aw_ready_i) begin
+                        aw_state_d = FEEDTHROUGH_AW;
+                    end else begin
+                        aw_state_d = SEND_AW;
+                    end
+                    // Remember outstanding W beats before injected request
+                    if (aw_state_q == WAIT_RESULT_AW) begin
+                        if (w_cnt_q && mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
                             w_cnt_inj_d = w_cnt_q - 1;
                         end else begin
                             w_cnt_inj_d = w_cnt_q;
                         end
-                        // Check if request is acknowledged
-                        if (mst_aw_ready_i) begin
-                            aw_state_d = FEEDTHROUGH_AW;
-                        end else begin
-                            aw_state_d = REQ_AW;
-                        end
-                    end else begin
                     end
                 end
-            end // WAIT_ALU
-
-            REQ_AW: begin
-                // Block
-                slv_aw_ready_o  = 1'b0;
-                // Hold write request
-                mst_aw_valid_o  = 1'b1;
-                mst_aw_addr_o   = addr_q;
-                mst_aw_len_o    = 8'h00;
-                mst_aw_id_o     = id_q;
-                mst_aw_size_o   = size_q;
-                mst_aw_burst_o  = 2'b00;
-                mst_aw_lock_o   = 1'b0;
-                mst_aw_cache_o  = cache_q;
-                mst_aw_prot_o   = prot_q;
-                mst_aw_qos_o    = qos_q;
-                mst_aw_region_o = region_q;
-                mst_aw_user_o   = user_q;
-                if (mst_aw_ready_i) begin
-                    aw_state_d = FEEDTHROUGH_AW;
-                end
-                // Keep counting the W beats
-                if (w_cnt_inj_q && mst_w_valid_o && mst_w_ready_i && mst_w_last_o) begin
-                    w_cnt_inj_d = w_cnt_inj_q - 1;
-                end
-            end // REQ_AW
+            end // WAIT_RESULT_AW, SEND_AW
 
             default: aw_state_d = FEEDTHROUGH_AW;
 
