@@ -21,6 +21,7 @@ sources:
   - src/axi_riscv_atomics.sv
   - src/axi_riscv_lrsc_wrap.sv
   # Level 3
+  - src/axi_riscv_amos_wrap.sv
   - src/axi_riscv_atomics_wrap.sv
 
   - target: test
