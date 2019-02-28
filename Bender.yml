@@ -26,3 +26,7 @@ sources:
   - target: test
     files:
       - test/axi_riscv_lrsc_tb.sv
+
+  - target: synth_test
+    files:
+      - test/axi_riscv_lrsc_synth.v
