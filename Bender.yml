@@ -4,7 +4,7 @@ package:
 
 dependencies:
   axi: { git: "https://github.com/pulp-platform/axi.git", version: 0.6.0 }
-  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.10.0 }
+  common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.11.0 }
   axi_mem_if: { git: "https://github.com/pulp-platform/axi_mem_if.git", rev: 313d075cac65e960fddc8b93848aceda18eebeac }
   axi_node: { git: "https://github.com/pulp-platform/axi_node.git", rev: a29a69a543e96d0c9f79ea9c7df20580b3da5002 }
   vip: { git: "git@iis-git.ee.ethz.ch:pulp-restricted/vip.git", rev: b130abb7d77af0e8febeebdf34517d836f61f153 }
