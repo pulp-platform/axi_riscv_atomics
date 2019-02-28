@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 
 ## Unreleased
 
+## v0.2.2 - 2019-02-28
+
 ### Changed
 - Update `axi` dependency to v0.6.0 (from an intermediary commit).
 
