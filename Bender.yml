@@ -3,8 +3,6 @@ package:
   authors: ["Andreas Kurth <akurth@iis.ee.ethz.ch>", "Samuel Riedel <sriedel@student.ethz.ch>"]
 
 dependencies:
-  # TODO: Once the special features we need from our dependencies are released in a tagged version,
-  # switch to that version for SemVer compatibility.
   axi: { git: "https://github.com/pulp-platform/axi.git", version: 0.6.0 }
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.10.0 }
 
