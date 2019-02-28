@@ -12,8 +12,8 @@
 // Simple standalone synthesis bench for axi_riscv_lrsc
 module axi_riscv_lrsc_synth #(
     /// Exclusively-accessible address range (closed interval from ADDR_BEGIN to ADDR_END)
-    parameter integer ADDR_BEGIN            = 64'h0000_0000_0000_0000,
-    parameter integer ADDR_END              = 64'h0000_7fff_ffff_ffff,
+    parameter [63:0] ADDR_BEGIN             = 64'h0000_0000_0000_0000,
+    parameter [63:0] ADDR_END               = 64'h0000_7fff_ffff_ffff,
     /// AXI Parameters
     parameter integer AXI_ADDR_WIDTH        = 64,
     parameter integer AXI_DATA_WIDTH        = 64,
