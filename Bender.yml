@@ -5,7 +5,7 @@ package:
 dependencies:
   # TODO: Once the special features we need from our dependencies are released in a tagged version,
   # switch to that version for SemVer compatibility.
-  axi: { git: "https://github.com/pulp-platform/axi.git", rev: 8140a2aa21e991271741b9865f0b0beea4a73999 }
+  axi: { git: "https://github.com/pulp-platform/axi.git", version: 0.6.0 }
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.10.0 }
 
 sources:
