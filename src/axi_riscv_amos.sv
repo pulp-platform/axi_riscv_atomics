@@ -192,6 +192,8 @@ module axi_riscv_amos #(
     // States
     logic                               adapter_ready;
     logic                               transaction_collision;
+    logic                               force_wf_d,     force_wf_q;
+    logic                               restart_d,      restart_q;
     logic                               aw_valid,       aw_ready,       aw_free,
                                         w_valid,        w_ready,        w_free,
                                         b_valid,        b_ready,        b_free,
@@ -258,6 +260,7 @@ module axi_riscv_amos #(
     // Calculate if the request interferes with the ongoing atomic transaction
     // The protected bytes go from addr_q up to addr_q + (1 << size_q) - 1
     // TODO Bursts need special treatment
+    // assign transaction_collision = 1'b0; // FIX
     assign transaction_collision = (slv_aw_addr_i < (     addr_q + (8'h01 <<      size_q))) &
                                    (     addr_q < (slv_aw_addr_i + (8'h01 << slv_aw_size_i)));
 
@@ -342,7 +345,7 @@ module axi_riscv_amos #(
             // Block if counter is overflowing
             mst_aw_valid_o = 1'b0;
             slv_aw_ready_o = 1'b0;
-        end else if (ar_state_q != FEEDTHROUGH_AR) begin
+        end else if (force_wf_q || ar_state_q != FEEDTHROUGH_AR) begin // TODO: remove ar_state... dependency
             // Block if the adapter is in force wait-free mode
             mst_aw_valid_o = 1'b0;
             slv_aw_ready_o = 1'b0;
@@ -384,6 +387,12 @@ module axi_riscv_amos #(
                     end
                 end
 
+                if (restart_q) begin
+                    // Forced wait-free state --> wait for ALU once more
+                    aw_state_d = WAIT_RESULT_AW;
+                end
+
+
             end // FEEDTHROUGH_AW
 
             WAIT_RESULT_AW, SEND_AW: begin
@@ -398,7 +407,7 @@ module axi_riscv_amos #(
                     mst_aw_id_o     = id_q;
                     mst_aw_size_o   = size_q;
                     mst_aw_burst_o  = axi_pkg::BURST_INCR;
-                    mst_aw_lock_o   = 1'b0;
+                    mst_aw_lock_o   = ~force_wf_q;
                     mst_aw_cache_o  = cache_q;
                     mst_aw_prot_o   = prot_q;
                     mst_aw_qos_o    = qos_q;
@@ -494,6 +503,12 @@ module axi_riscv_amos #(
                         end
                     end
                 end
+
+                if (restart_q) begin
+                    // Forced wait-free state --> wait for ALU once more
+                    w_state_d = WAIT_RESULT_W;
+                end
+
             end // FEEDTHROUGH_W
 
             WAIT_DATA_W: begin
@@ -579,6 +594,10 @@ module axi_riscv_amos #(
         slv_b_resp_o  = mst_b_resp_i;
         slv_b_user_o  = mst_b_user_i;
         slv_b_valid_o = mst_b_valid_i;
+        // Defaults FF
+        force_wf_d    = force_wf_q;
+        // restart_d     = restart_q;
+        restart_d     = 1'b0;
         // State Machine
         b_state_d     = b_state_q;
 
@@ -627,8 +646,30 @@ module axi_riscv_amos #(
             end // WAIT_CHANNEL_B, SEND_B
 
             WAIT_COMPLETE_B: begin
-                if (mst_b_valid_i && (mst_b_id_i == id_q)) begin
-                    b_state_d = FEEDTHROUGH_B;
+                if (mst_b_valid_i && (mst_b_id_i == id_q)) begin // TODO: Change dependency on R channel if B has to wait in this state
+                    // Check if store-conditional was successful
+                    if (mst_b_resp_i == axi_pkg::RESP_OKAY) begin
+                        if (force_wf_q) begin
+                            // We were in wf mode so now we are done
+                            force_wf_d    = 1'b0;
+                            b_state_d     = FEEDTHROUGH_B;
+                        end else begin
+                            // We were not in wf mode --> catch response
+                            mst_b_ready_o = 1'b1;
+                            slv_b_valid_o = 1'b0;
+                            // Go into wf mode
+                            restart_d     = 1'b1;
+                            force_wf_d    = 1'b1;
+                        end
+                    end else if (mst_b_resp_i == axi_pkg::RESP_EXOKAY) begin
+                        // Modify the B response to regular OK.
+                        slv_b_resp_o = axi_pkg::RESP_OKAY;
+                        if (slv_b_ready_i) begin
+                            b_state_d = FEEDTHROUGH_B;
+                        end
+                    end else begin
+                        b_state_d = FEEDTHROUGH_B;
+                    end
                 end
             end // WAIT_COMPLETE_B
 
@@ -662,6 +703,8 @@ module axi_riscv_amos #(
             w_cnt_q     <= '0;
             w_cnt_req_q <= '0;
             w_cnt_inj_q <= '0;
+            force_wf_q  <= 1'b0;
+            restart_q   <= 1'b0;
             addr_q      <= '0;
             id_q        <= '0;
             size_q      <= '0;
@@ -684,6 +727,8 @@ module axi_riscv_amos #(
             w_cnt_q     <= w_cnt_d;
             w_cnt_req_q <= w_cnt_req_d;
             w_cnt_inj_q <= w_cnt_inj_d;
+            force_wf_q  <= force_wf_d;
+            restart_q   <= restart_d;
             addr_q      <= addr_d;
             id_q        <= id_d;
             size_q      <= size_d;
@@ -733,39 +778,41 @@ module axi_riscv_amos #(
                 mst_ar_valid_o = slv_ar_valid_i;
                 slv_ar_ready_o = mst_ar_ready_i;
 
-                if (adapter_ready) begin
-                    if (atop_valid_d == LOAD | atop_valid_d == STORE) begin
-                        if (ar_free && (aw_trans_q == 0)) begin
-                            // Acquire channel
-                            slv_ar_ready_o  = 1'b0;
-                            // Immediately start read request
-                            mst_ar_valid_o  = 1'b1;
-                            mst_ar_addr_o   = slv_aw_addr_i;
-                            mst_ar_id_o     = slv_aw_id_i;
-                            mst_ar_len_o    = 8'h00;
-                            mst_ar_size_o   = slv_aw_size_i;
-                            mst_ar_burst_o  = axi_pkg::BURST_INCR;
-                            mst_ar_lock_o   = 1'h0;
-                            mst_ar_cache_o  = slv_aw_cache_i;
-                            mst_ar_prot_o   = slv_aw_prot_i;
-                            mst_ar_qos_o    = slv_aw_qos_i;
-                            mst_ar_region_o = slv_aw_region_i;
-                            mst_ar_user_o   = slv_aw_user_i;
-                            if (!mst_ar_ready_i) begin
-                                // Hold read request but do not depend on AW
-                                ar_state_d = SEND_AR;
-                            end
-                        end else begin
-                            // Wait until AR is free
-                            ar_state_d   = WAIT_CHANNEL_AR;
+                if (adapter_ready && (atop_valid_d == LOAD || atop_valid_d == STORE)) begin
+                    if (ar_free) begin
+                        // Acquire channel
+                        slv_ar_ready_o  = 1'b0;
+                        // Immediately start read request
+                        mst_ar_valid_o  = 1'b1;
+                        mst_ar_addr_o   = slv_aw_addr_i;
+                        mst_ar_id_o     = slv_aw_id_i;
+                        mst_ar_len_o    = 8'h00;
+                        mst_ar_size_o   = slv_aw_size_i;
+                        mst_ar_burst_o  = axi_pkg::BURST_INCR;
+                        mst_ar_lock_o   = ~force_wf_q;
+                        mst_ar_cache_o  = slv_aw_cache_i;
+                        mst_ar_prot_o   = slv_aw_prot_i;
+                        mst_ar_qos_o    = slv_aw_qos_i;
+                        mst_ar_region_o = slv_aw_region_i;
+                        mst_ar_user_o   = slv_aw_user_i;
+                        if (!mst_ar_ready_i) begin
+                            // Hold read request but do not depend on AW
+                            ar_state_d = SEND_AR;
                         end
+                    end else begin
+                        // Wait until AR is free
+                        ar_state_d   = WAIT_CHANNEL_AR;
                     end
+                end
+
+                if (restart_q) begin
+                    ar_state_d = WAIT_CHANNEL_AR;
                 end
             end // FEEDTHROUGH_AR
 
             WAIT_CHANNEL_AR, SEND_AR: begin
                 // Issue read request
-                if ((ar_free  && (aw_trans_q == 0)) || (ar_state_q == SEND_AR)) begin
+                if ((ar_free  && (aw_trans_q == 0 || force_wf_q == 0)) || (ar_state_q == SEND_AR)) begin
                     // Inject read request
                     mst_ar_valid_o  = 1'b1;
                     mst_ar_addr_o   = addr_q;
@@ -773,7 +820,7 @@ module axi_riscv_amos #(
                     mst_ar_len_o    = 8'h00;
                     mst_ar_size_o   = size_q;
                     mst_ar_burst_o  = axi_pkg::BURST_INCR;
-                    mst_ar_lock_o   = 1'h0;
+                    mst_ar_lock_o   = ~force_wf_q;
                     mst_ar_cache_o  = cache_q;
                     mst_ar_prot_o   = prot_q;
                     mst_ar_qos_o    = qos_q;
@@ -850,6 +897,11 @@ module axi_riscv_amos #(
                         end
                     end
                 end
+
+                if (restart_q) begin
+                    r_d_valid_d = 1'b0;
+                    r_state_d   = WAIT_DATA_R;
+                end
             end // FEEDTHROUGH_R
 
             WAIT_DATA_R: begin
@@ -895,6 +947,11 @@ module axi_riscv_amos #(
                     end else begin
                         r_state_d = SEND_R;
                     end
+                end
+
+                if (restart_q) begin
+                    r_d_valid_d = 1'b0;
+                    r_state_d   = WAIT_DATA_R;
                 end
             end // WAIT_CHANNEL_R, SEND_R
 

@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 ### Fixed
 - `axi_riscv_lrsc` is now able to sustain the nominal write bandwidth.
 - `axi_riscv_lrsc` now orders SWs and SCs in accordance with RVWMO (#4).
+- `axi_riscv_amos` use LR/SC to guarantee atomicity despite in-flight writes downstream.
 
 ## v0.2.2 - 2019-02-28
 
