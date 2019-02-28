@@ -29,8 +29,9 @@ sources:
 
   - target: test
     files:
-    - test/generic_memory.sv
-    - test/axi_memory.sv
-    - test/tb_axi_pkg.sv
-    - test/golden_memory.sv
-    - test/axi_riscv_atomics_tb.sv
+      - test/generic_memory.sv
+      - test/axi_memory.sv
+      - test/tb_axi_pkg.sv
+      - test/golden_memory.sv
+      - test/axi_riscv_atomics_tb.sv
+      - test/axi_riscv_lrsc_tb.sv
