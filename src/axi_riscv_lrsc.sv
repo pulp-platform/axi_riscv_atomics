@@ -151,11 +151,11 @@ module axi_riscv_lrsc #(
 
     // Declarations of Signals and Types
 
-    typedef logic [AXI_ADDR_WIDTH-1:0]  axi_addr_t;
     typedef logic [AXI_DATA_WIDTH-1:0]  axi_data_t;
     typedef logic [AXI_ID_WIDTH-1:0]    axi_id_t;
     typedef logic [1:0]                 axi_resp_t;
     typedef logic [AXI_USER_WIDTH-1:0]  axi_user_t;
+    typedef logic [AXI_ADDR_WIDTH-3:0]  res_addr_t; // Track reservations word wise.
 
     typedef enum logic [1:0] {
         B_U='x, B_REGULAR='0, B_EXCLUSIVE, B_INJECT
@@ -191,7 +191,7 @@ module axi_riscv_lrsc #(
     } w_cmd_t;
 
     typedef struct packed {
-        axi_addr_t  addr;
+        res_addr_t  addr;
         logic       excl;
     } w_flight_t;
 
@@ -218,7 +218,7 @@ module axi_riscv_lrsc #(
                     b_status_oup_id,
                     rifq_oup_id;
 
-    axi_addr_t      ar_push_addr,
+    res_addr_t      ar_push_addr,
                     art_check_clr_addr;
 
     logic           ar_push_excl,
@@ -405,12 +405,12 @@ module axi_riscv_lrsc #(
 
             AR_IDLE: begin
                 if (slv_ar_valid_i) begin
-                    ar_push_addr = slv_ar_addr_i;
+                    ar_push_addr = slv_ar_addr_i[AXI_ADDR_WIDTH-1:2];
                     ar_push_id = slv_ar_id_i;
                     ar_push_excl = (slv_ar_addr_i >= ADDR_BEGIN && slv_ar_addr_i <= ADDR_END &&
                             slv_ar_lock_i && slv_ar_len_i == 8'h00);
                     if (ar_push_excl) begin
-                        ar_wifq_exists_inp.data.addr = slv_ar_addr_i;
+                        ar_wifq_exists_inp.data.addr = slv_ar_addr_i[AXI_ADDR_WIDTH-1:2];
                         ar_wifq_exists_req = 1'b1;
                         if (ar_wifq_exists_gnt) begin
                             ar_push_res = !wifq_exists;
@@ -500,7 +500,7 @@ module axi_riscv_lrsc #(
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
         .inp_id_i           (mst_aw_id_o),
-        .inp_data_i         ({mst_aw_addr_o, slv_aw_lock_i}),
+        .inp_data_i         ({mst_aw_addr_o[AXI_ADDR_WIDTH-1:2], slv_aw_lock_i}),
         .inp_req_i          (mst_aw_valid_o && mst_aw_ready_i),
         .inp_gnt_o          (wifq_inp_gnt),
         .exists_data_i      (wifq_exists_inp.data),
@@ -616,15 +616,15 @@ module axi_riscv_lrsc #(
                         // Inside exclusively-accessible range.
                         // Make sure no exclusive AR to the same address is currently waiting.
                         if (!(slv_ar_valid_i && slv_ar_lock_i &&
-                                slv_ar_addr_i == slv_aw_addr_i)) begin
+                                slv_ar_addr_i[AXI_ADDR_WIDTH-1:2] == slv_aw_addr_i[AXI_ADDR_WIDTH-1:2])) begin
                             // Make sure no exclusive write to the same address is currently in
                             // flight.
-                            aw_wifq_exists_inp.data.addr = slv_aw_addr_i;
+                            aw_wifq_exists_inp.data.addr = slv_aw_addr_i[AXI_ADDR_WIDTH-1:2];
                             aw_wifq_exists_inp.data.excl = 1'b1;
                             aw_wifq_exists_req = 1'b1;
                             if (aw_wifq_exists_gnt && !wifq_exists) begin
                                 // Check reservation and clear identical addresses.
-                                art_check_clr_addr  = slv_aw_addr_i;
+                                art_check_clr_addr  = slv_aw_addr_i[AXI_ADDR_WIDTH-1:2];
                                 art_check_id        = slv_aw_id_i;
                                 art_check_clr_excl  = slv_aw_lock_i;
                                 art_check_clr_req   = 1'b1;
@@ -883,7 +883,7 @@ module axi_riscv_lrsc #(
 
     // AXI Reservation Table
     axi_res_tbl #(
-        .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
+        .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH-2), // Track reservations word-wise.
         .AXI_ID_WIDTH   (AXI_ID_WIDTH)
     ) i_art (
         .clk_i                  (clk_i),
