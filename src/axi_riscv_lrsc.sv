@@ -449,7 +449,7 @@ module axi_riscv_lrsc #(
 
     // FIFO to track commands for W bursts.
     fifo_v3 #(
-        .FALL_THROUGH   (1'b1),
+        .FALL_THROUGH   (1'b0), // TODO: Why is there a combinatorial loop if this is fall-through?
         .dtype          (w_cmd_t),
         .DEPTH          (AXI_MAX_WRITE_TXNS)
     ) i_w_cmd_fifo (
@@ -864,13 +864,11 @@ module axi_riscv_lrsc #(
     );
 
     // Fall-through register in front of slv_r to remove mutual dependency.
-    fall_through_register #(
+    spill_register #( // TODO: Why is there a combinatorial loop if this is a `fall_through_register`?
         .T  (r_chan_t)
     ) slv_r_reg (
         .clk_i      (clk_i),
         .rst_ni     (rst_ni),
-        .clr_i      (1'b0),
-        .testmode_i (1'b0),
 
         .valid_i    (slv_r_valid),
         .ready_o    (slv_r_ready),
