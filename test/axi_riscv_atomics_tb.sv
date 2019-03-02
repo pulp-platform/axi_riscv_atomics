@@ -209,6 +209,7 @@ module automatic axi_riscv_atomics_tb;
         // Run tests!
         // test_all_amos();
         test_same_address();
+        test_amo_write_consistency();
         // test_interleaving(); // Only works on old memory controller
         // test_atomic_counter();
         random_amo();
@@ -742,6 +743,59 @@ module automatic axi_riscv_atomics_tb;
 
     endtask : test_same_address
 
+    // Test if the adapter protects the atomic region correctly
+    task automatic test_amo_write_consistency();
+        // Parameters
+        parameter NUM_ITERATION = 1000;
+        parameter ADDRESS_START = 'h01004000;
+        parameter ADDRESS_END   = 'h01004040;
+        // Variables
+        automatic logic [AXI_ADDR_WIDTH-1:0] address = ADDRESS_START; // shared by all threads
+        automatic logic [SYS_DATA_WIDTH-1:0] r_data_init;
+        automatic logic [1:0] b_resp_init;
+        automatic logic [SYS_DATA_WIDTH-1:0] exp_data_init;
+        automatic logic [1:0] exp_b_resp_init;
+
+        $display("Test AMO and write consistency...\n");
+
+        // Initialize memory with 0
+        for (int i = 0; i < (ADDRESS_END-ADDRESS_START)/(SYS_DATA_WIDTH/8); i+=(SYS_DATA_WIDTH/8)) begin
+            write_amo_read_cycle(0, ADDRESS_START+i, 0, 0, SYS_OFFSET_BIT, 0, 0);
+        end
+
+        // Spawn multiple processes accessing this address
+        for (int i = 0; i < NUM_MASTERS; i++) begin
+            fork
+                automatic int m = i;
+                automatic logic [AXI_ADDR_WIDTH-1:0] address;
+                automatic logic [AXI_ID_WIDTH_M-1:0] id;
+                automatic logic [SYS_DATA_WIDTH-1:0] data_init;
+                automatic logic [SYS_DATA_WIDTH-1:0] data_amo;
+                automatic logic [2:0]                size;
+                automatic logic [5:0]                atop;
+                for (int j = 0; j < NUM_ITERATION; j++) begin
+                    // Randomize address but keep it in same word
+                    address = $urandom_range(ADDRESS_START,ADDRESS_END);
+                    void'(randomize(id));
+                    void'(randomize(data_init));
+                    void'(randomize(data_amo));
+                    void'(randomize(atop));
+                    atop = create_valid_atop();
+                    // void'(randomize(size)); // Half-word not supported by LRSC yet
+                    size = SYS_OFFSET_BIT;
+                    create_consistent_transaction(address, size, atop);
+                    write_amo_read_cycle(m, address, data_init, data_amo, size, id, atop);
+                end
+            join_none
+        end
+
+        // Wait for all cores to finish
+        wait fork;
+
+        #1000ns;
+
+    endtask : test_amo_write_consistency
+
     /*====================================================================
     =                          Helper Functions                          =
     ====================================================================*/
@@ -768,6 +822,80 @@ module automatic axi_riscv_atomics_tb;
             end
         end
     endtask : create_consistent_transaction
+
+    function automatic logic [5:0] create_valid_atop();
+        int random_atop = $urandom_range(0, 16);
+        void'(randomize(create_valid_atop));
+
+        if (random_atop < 8) begin
+            // Store
+            create_valid_atop[5:3] = 3'b010;
+        end else if (random_atop < 16) begin
+            // Load
+            create_valid_atop[5:3] = 3'b100;
+        end else begin
+            create_valid_atop = 6'b110000;
+        end
+    endfunction : create_valid_atop
+
+    task automatic write_cycle(
+        input int unsigned               driver,
+        input logic [AXI_ADDR_WIDTH-1:0] address,
+        input logic [SYS_DATA_WIDTH-1:0] data,
+        input logic [SYS_DATA_WIDTH-1:0] data_amo,
+        input logic [2:0]                size,
+        input logic [AXI_ID_WIDTH_M-1:0] id,
+        input logic [5:0]                atop
+    );
+        automatic logic [AXI_ID_WIDTH_M-1:0] trans_id = id;
+        automatic logic [SYS_DATA_WIDTH-1:0] r_data;
+        automatic logic [SYS_DATA_WIDTH-1:0] exp_data;
+        automatic logic [SYS_DATA_WIDTH-1:0] act_data;
+        automatic logic [1:0]  b_resp;
+        automatic logic [1:0]  exp_b_resp;
+
+        // Write (Need valid memory for atop)
+        if (!id) begin
+            void'(randomize(trans_id));
+        end
+        fork
+            axi_dut_master[driver].axi_write(address, data, size, trans_id, r_data, b_resp);
+            gold_memory.write(address, data, size, trans_id, driver, exp_data, exp_b_resp);
+        join
+        // AMO
+        if (!id) begin
+            void'(randomize(trans_id));
+        end
+        fork
+            // Atomic operation
+            axi_dut_master[driver].axi_write(address, data_amo, size, trans_id, r_data, b_resp, atop);
+            // Golden model
+            gold_memory.write(address, data_amo, size, trans_id, driver, exp_data, exp_b_resp, atop);
+        join
+        assert(b_resp == exp_b_resp) else begin
+            $warning("B (0x%1x) did not match expected (0x%1x)", b_resp, exp_b_resp);
+            num_errors += 1;
+        end
+        if ((atop[5:3] == {axi_pkg::ATOP_ATOMICLOAD, axi_pkg::ATOP_LITTLE_END}) |
+            (atop[5:3] == {axi_pkg::ATOP_ATOMICSWAP, axi_pkg::ATOP_LITTLE_END})) begin
+            assert(r_data == exp_data) else begin
+                $warning("ATOP (0x%x) did not match expected data (0x%x) at address 0x%x at operation: 0x%2x", r_data, exp_data, address, atop);
+                num_errors += 1;
+            end
+        end
+        // Read result
+        if (!id) begin
+            void'(randomize(trans_id));
+        end
+        fork
+            axi_dut_master[driver].axi_read(address, act_data, size, trans_id);
+            gold_memory.read(address, exp_data, size, trans_id, driver);
+        join
+        assert(act_data == exp_data) else begin
+            $warning("R (0x%x) did not match expected data (0x%x) at address 0x%x, size %x, after operation: 0x%2x (0x%x)", act_data, exp_data, address, size, atop, data);
+            num_errors += 1;
+        end
+    endtask : write_cycle
 
     task automatic write_amo_read_cycle(
         input int unsigned               driver,

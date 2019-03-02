@@ -122,62 +122,24 @@ package golden_model_pkg;
             b_resp = axi_pkg::RESP_OKAY;
 
             if (atop == 0) begin
-                // Regular write --> update the memory
-                // wait_write(addr, size, id);
-
+                // Wait for the write
                 wait_b(id);
                 set_memory(address, w_data, size);
                 r_data = '0;
             end else if (atop == axi_pkg::ATOP_ATOMICSWAP) begin
-                // Swap operation
-                // Read old value
-                // wait_read(addr, size, id);
-                // data_uo = get_memory(address, size);
-
-                // Make sure the address is not written between the read and write operation
-                // wait_write(addr, size, id, trans_id);
-                // assert(id == trans_id) else begin
-                //     $warning("AMO transaction was not executed atomically! (Address: %x, ID: %x, Interferer_ID: %x)", addr, id, trans_id);
-                //     trans_id = '0;
-                //     wait_write(addr, size, id, trans_id);
-                // end
-
                 // Wait for the write to happen
                 wait_b(id);
-                // Just read before writing and then update memory
-                data_uo = get_memory(address, size);
-
-                if (data_uo != get_memory(address, size)) begin
-                    $warning("AMO transaction was not executed atomically! (Address: %x, ID: %x, Interferer_ID: %x)", addr, id, trans_id);
-                end
-
+                // Read before writing and then update memory
+                r_data = get_memory(address, size);
                 set_memory(address, w_data, size);
-                r_data = data_uo;
             end else if ((atop[5:3] == {axi_pkg::ATOP_ATOMICLOAD,  axi_pkg::ATOP_LITTLE_END}) ||
                          (atop[5:3] == {axi_pkg::ATOP_ATOMICSTORE, axi_pkg::ATOP_LITTLE_END})) begin
-                // Fetch data
-                // wait_read(addr, size, id);
-                // data_uo = $unsigned(get_memory(address, size));
-                // data_so = $signed(crop_data(get_memory(address, size), size, 1));
-
-                // r_data  = data_uo;
-
-                // // Make sure the address is not written between the read and write operation
-                // wait_write(addr, size, id, trans_id);
-                // assert(id == trans_id) else begin
-                //     $warning("AMO transaction was not executed atomically! (Address: %x, ID: %x, Interferer_ID: %x)", addr, id, trans_id);
-                //     wait_write(addr, size, id);
-                // end
-
                 // Wait for the write to happen
                 wait_b(id);
                 data_uo = $unsigned(get_memory(address, size));
                 data_so = $signed(crop_data(get_memory(address, size), size, 1));
 
                 r_data  = data_uo;
-                if (data_uo != $unsigned(get_memory(address, size))) begin
-                    $warning("AMO transaction was not executed atomically! (Address: %x, ID: %x, Interferer_ID: %x)", addr, id, trans_id);
-                end
 
                 // Write result
                 unique case (atop[2:0])
