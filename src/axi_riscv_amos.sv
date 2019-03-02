@@ -345,7 +345,7 @@ module axi_riscv_amos #(
             // Block if counter is overflowing
             mst_aw_valid_o = 1'b0;
             slv_aw_ready_o = 1'b0;
-        end else if (force_wf_q || ar_state_q != FEEDTHROUGH_AR) begin // TODO: remove ar_state... dependency
+        end else if (force_wf_q && aw_free) begin // TODO: no not instantly block the channel but only if its free
             // Block if the adapter is in force wait-free mode
             mst_aw_valid_o = 1'b0;
             slv_aw_ready_o = 1'b0;
