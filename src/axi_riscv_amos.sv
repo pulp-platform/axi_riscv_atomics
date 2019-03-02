@@ -345,8 +345,8 @@ module axi_riscv_amos #(
             // Block if counter is overflowing
             mst_aw_valid_o = 1'b0;
             slv_aw_ready_o = 1'b0;
-        end else if (force_wf_q || ar_state_q != FEEDTHROUGH_AR) begin // TODO: remove ar_state... dependency
-            // Block if the adapter is in force wait-free mode
+        end else if (force_wf_q && aw_free) begin
+            // Block if the adapter is in force wait-free mode and the AW is free
             mst_aw_valid_o = 1'b0;
             slv_aw_ready_o = 1'b0;
         end else if (slv_aw_valid_i && transaction_collision && !adapter_ready) begin
