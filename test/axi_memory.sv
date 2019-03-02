@@ -29,12 +29,14 @@ module axi_memory #(
     logic [AXI_DATA_WIDTH/8-1:0]    be;
     logic                           req, we, wen;
 
-    AXI_BUS #(
+    AXI_BUS_DV #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
         .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_WIDTH   ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH )
-    ) axi_mem_int();
+    ) axi_mem_int(
+        .clk_i          ( clk_i          )
+    );
 
     assign aw_addr = {{MEM_OFFSET_BITS{1'b0}}, slv.aw_addr[AXI_ADDR_WIDTH-1:MEM_OFFSET_BITS]};
     assign ar_addr = {{MEM_OFFSET_BITS{1'b0}}, slv.ar_addr[AXI_ADDR_WIDTH-1:MEM_OFFSET_BITS]};

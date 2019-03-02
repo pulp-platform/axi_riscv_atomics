@@ -36,15 +36,14 @@ package tb_axi_pkg;
 
         function new(
             int unsigned obj_id_in,
-            virtual AXI_BUS #(
+            virtual AXI_BUS_DV #(
                 .AXI_ADDR_WIDTH(AW),
                 .AXI_DATA_WIDTH(DW),
                 .AXI_ID_WIDTH(IW),
                 .AXI_USER_WIDTH(UW)
-            ) axi,
-            virtual AXI_CLK clk
+            ) axi
         );
-            super.new(axi, clk);
+            super.new(axi);
             obj_id = obj_id_in;
             $timeformat(-9, 2, " ns", 10);
             $display("%d: PARAMS %d, %d, %d, %d, %t, %t", obj_id, AW, DW, IW, UW, TA, TT);
@@ -53,7 +52,7 @@ package tb_axi_pkg;
         // Wait a random amount of cycles
         task rand_delay(int min, int max);
             repeat ($urandom_range(min, max)) begin
-                @(posedge clk.clk);
+                @(posedge axi.clk_i);
             end
         endtask : rand_delay
 

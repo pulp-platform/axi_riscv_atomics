@@ -11,6 +11,8 @@
 
 `timescale 10ps/10ps
 
+`include "axi/assign.svh"
+
 module automatic axi_riscv_atomics_tb;
 
     // Constants
@@ -62,6 +64,21 @@ module automatic axi_riscv_atomics_tb;
         .AXI_USER_WIDTH ( AXI_USER_WIDTH )
     ) axi_cl[NUM_MASTERS]();
 
+    AXI_BUS_DV #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
+        .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_WIDTH_M ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH )
+    ) axi_cl_dv[NUM_MASTERS](
+        .clk_i          ( clk            )
+    );
+
+    generate
+        for (genvar i = 0; i < NUM_MASTERS; i++) begin
+            `AXI_ASSIGN(axi_cl[i], axi_cl_dv[i]);
+        end
+    endgenerate
+
     // Module instantiation
     axi_node_intf_wrap #(
         .NB_MASTER      ( 1              ), // To Memory
@@ -101,13 +118,15 @@ module automatic axi_riscv_atomics_tb;
         .slv     ( axi_mem )
     );
 
-    axi_riscv_amos_wrap #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
-        .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH ),
-        .AXI_MAX_WRITE_TXNS ( 7 ),
-        .RISCV_WORD_WIDTH ( SYS_DATA_WIDTH )
+    // axi_riscv_amos_wrap #(
+    axi_riscv_atomics_wrap #(
+        .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH ),
+        .AXI_DATA_WIDTH     ( AXI_DATA_WIDTH ),
+        .AXI_ID_WIDTH       ( AXI_ID_WIDTH_S ),
+        .AXI_USER_WIDTH     ( AXI_USER_WIDTH ),
+        .AXI_MAX_READ_TXNS  ( 31             ),
+        .AXI_MAX_WRITE_TXNS ( 31             ),
+        .RISCV_WORD_WIDTH   ( SYS_DATA_WIDTH )
     ) i_axi_atomic_adapter (
         .clk_i    ( clk        ),
         .rst_ni   ( rst_n      ),
@@ -116,8 +135,6 @@ module automatic axi_riscv_atomics_tb;
     );
 
     // AXI Testbench
-    AXI_CLK axi_clk(clk);
-
     // AXI driver
     tb_axi_pkg::axi_access #(
         .AW( AXI_ADDR_WIDTH ),
@@ -125,14 +142,16 @@ module automatic axi_riscv_atomics_tb;
         .IW( AXI_ID_WIDTH_M ),
         .UW( AXI_USER_WIDTH ),
         .SW( SYS_DATA_WIDTH ),
-        .TA( 200ps          ),
-        .TT( 700ps          )
+        // .TA( 200ps          ),
+        // .TT( 700ps          )
+        .TA( 0ps          ),
+        .TT( 900ps          )
     ) axi_dut_master[NUM_MASTERS];
 
     generate
         for (genvar i = 0; i < NUM_MASTERS; i++) begin : gen_axi_access
             initial begin
-                axi_dut_master[i] = new(i, axi_cl[i], axi_clk);
+                axi_dut_master[i] = new(i, axi_cl_dv[i]);
             end
         end
     endgenerate
@@ -152,7 +171,7 @@ module automatic axi_riscv_atomics_tb;
         .AXI_ID_WIDTH_M( AXI_ID_WIDTH_M ),
         .AXI_ID_WIDTH_S( AXI_ID_WIDTH_S ),
         .AXI_USER_WIDTH( AXI_USER_WIDTH )
-    ) gold_memory = new(i_axi_memory.axi_mem_int, axi_clk);
+    ) gold_memory = new(i_axi_memory.axi_mem_int);
 
     // Generate clock
     localparam tCK = 1ns;
@@ -188,10 +207,10 @@ module automatic axi_riscv_atomics_tb;
         @(posedge clk);
         wait (rst_n);
         // Run tests!
-        test_all_amos();
+        // test_all_amos();
         test_same_address();
-        test_interleaving(); // Only works on old memory controller
-        test_atomic_counter();
+        // test_interleaving(); // Only works on old memory controller
+        // test_atomic_counter();
         random_amo();
 
         // overtake_r();
@@ -266,7 +285,7 @@ module automatic axi_riscv_atomics_tb;
                     automatic logic [1:0]                exp_b_resp;
 
                     // Make some non-atomic transactions
-                    repeat (200) begin
+                    repeat (100) begin
                         void'(randomize(address));
                         void'(randomize(data_init));
                         void'(randomize(id));
@@ -692,6 +711,7 @@ module automatic axi_riscv_atomics_tb;
                     void'(randomize(w_data));
                     void'(randomize(atop));
                     void'(randomize(size));
+                    size = 3'b011;
                     if (atop[3] | (&atop[5:4] & |atop[2:0])) begin
                         atop = 6'b000000;
                     end
