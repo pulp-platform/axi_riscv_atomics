@@ -628,7 +628,9 @@ module axi_riscv_lrsc #(
                                 art_check_clr_addr  = slv_aw_addr_i[AXI_ADDR_WIDTH-1:2];
                                 art_check_id        = slv_aw_id_i;
                                 art_check_clr_excl  = slv_aw_lock_i;
-                                art_check_clr_req   = 1'b1;
+                                if (mst_aw_ready_i) begin
+                                    art_check_clr_req = 1'b1;
+                                end
                                 if (art_check_clr_gnt) begin
                                     if (slv_aw_lock_i && slv_aw_len_i == 8'h00) begin
                                         // Exclusive access and no burst, so check reservation.
