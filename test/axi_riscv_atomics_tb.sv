@@ -746,7 +746,7 @@ module automatic axi_riscv_atomics_tb;
     // Test if the adapter protects the atomic region correctly
     task automatic test_amo_write_consistency();
         // Parameters
-        parameter NUM_ITERATION = 1000;
+        parameter NUM_ITERATION = 200;
         parameter ADDRESS_START = 'h01004000;
         parameter ADDRESS_END   = 'h01004040;
         // Variables

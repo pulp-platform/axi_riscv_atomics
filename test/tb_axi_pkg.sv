@@ -77,10 +77,19 @@ package tb_axi_pkg;
             ax_beat.ax_id   = id;
             ax_beat.ax_addr = address;
             ax_beat.ax_size = size;
-            ax_beat.ax_atop = atop;
             w_beat.w_data   = axi_data;
             w_beat.w_strb   = strb;
             w_beat.w_last   = 1'b1;
+            if (atop == 6'b000111) begin
+                // LRSC pair
+                axi_read(address, result, size, id, 1'b1);
+                rand_delay(0,10*RAND_DELAY);
+                ax_beat.ax_atop = '0;
+                ax_beat.ax_lock = 1'b1;
+            end else begin
+                ax_beat.ax_atop = atop;
+                ax_beat.ax_lock = 1'b0;
+            end
             fork
                 // AW
                 begin
@@ -107,7 +116,8 @@ package tb_axi_pkg;
                 end
                 // R response if atop
                 begin
-                    if ((atop != 0) && (atop[5:3] != {axi_pkg::ATOP_ATOMICSTORE, axi_pkg::ATOP_LITTLE_END})) begin // Atomic operations with read response
+                    if ((atop != 0) && (atop[5:3] != {axi_pkg::ATOP_ATOMICSTORE, axi_pkg::ATOP_LITTLE_END}) &&
+                        (atop != 6'b000111)) begin // Atomic operations with read response
                         rand_delay(0,RAND_DELAY);
                         recv_r(r_beat);
                         result = r_beat.r_data;
@@ -117,7 +127,7 @@ package tb_axi_pkg;
                     end
                 end
             join
-            map_axi2sys_data(address, r_beat.r_data, size, result);
+            map_axi2sys_data(address, result, size, result);
         endtask : axi_write
 
         // Read over AXI
@@ -125,7 +135,8 @@ package tb_axi_pkg;
             input  logic [AW-1:0] address,
             output logic [SW-1:0] data,
             input  logic [2:0]    size,
-            input  logic [IW-1:0] id
+            input  logic [IW-1:0] id,
+            input  logic          lock = 1'b0
         );
             automatic ax_beat_t ax_beat = new;
             automatic r_beat_t  r_beat  = new;
@@ -133,6 +144,7 @@ package tb_axi_pkg;
             ax_beat.ax_id   = id;
             ax_beat.ax_addr = address;
             ax_beat.ax_size = size;
+            ax_beat.ax_lock = lock;
             fork
                 // AR
                 begin
@@ -147,7 +159,7 @@ package tb_axi_pkg;
                     if (r_beat.r_id != id) begin
                         $display("%0t: %d: AXI READ: r_id (0x%x) did not match ar_id (0x%x)", $time, obj_id, r_beat.r_id, id);
                     end
-                    if (r_beat.r_resp) begin
+                    if ((lock && r_beat.r_resp != axi_pkg::RESP_EXOKAY) || (!lock && r_beat.r_resp != axi_pkg::RESP_OKAY)) begin
                         $display("%0t: %d: AXI READ: r_resp was 0x%x", $time, obj_id, r_beat.r_resp);
                     end
                 end
