@@ -193,7 +193,8 @@ module axi_riscv_amos #(
     logic                               adapter_ready;
     logic                               transaction_collision;
     logic                               force_wf_d,     force_wf_q;
-    logic                               restart_d,      restart_q;
+    logic                               start_wf_d,     start_wf_q;
+    logic                               b_resp_valid;
     logic                               aw_valid,       aw_ready,       aw_free,
                                         w_valid,        w_ready,        w_free,
                                         b_valid,        b_ready,        b_free,
@@ -260,7 +261,6 @@ module axi_riscv_amos #(
     // Calculate if the request interferes with the ongoing atomic transaction
     // The protected bytes go from addr_q up to addr_q + (1 << size_q) - 1
     // TODO Bursts need special treatment
-    // assign transaction_collision = 1'b0; // FIX
     assign transaction_collision = (slv_aw_addr_i < (     addr_q + (8'h01 <<      size_q))) &
                                    (     addr_q < (slv_aw_addr_i + (8'h01 << slv_aw_size_i)));
 
@@ -355,8 +355,8 @@ module axi_riscv_amos #(
             slv_aw_ready_o = 1'b0;
         end else begin
             // Forward
-            mst_aw_valid_o  = slv_aw_valid_i;
-            slv_aw_ready_o  = mst_aw_ready_i;
+            mst_aw_valid_o = slv_aw_valid_i;
+            slv_aw_ready_o = mst_aw_ready_i;
         end
 
         // Count W burst to know when to inject the W data
@@ -387,7 +387,7 @@ module axi_riscv_amos #(
                     end
                 end
 
-                if (restart_q) begin
+                if (start_wf_q) begin
                     // Forced wait-free state --> wait for ALU once more
                     aw_state_d = WAIT_RESULT_AW;
                 end
@@ -504,7 +504,7 @@ module axi_riscv_amos #(
                     end
                 end
 
-                if (restart_q) begin
+                if (start_wf_q) begin
                     // Forced wait-free state --> wait for ALU once more
                     w_state_d = WAIT_RESULT_W;
                 end
@@ -596,8 +596,8 @@ module axi_riscv_amos #(
         slv_b_valid_o = mst_b_valid_i;
         // Defaults FF
         force_wf_d    = force_wf_q;
-        // restart_d     = restart_q;
-        restart_d     = 1'b0;
+        start_wf_d    = 1'b0;
+        b_resp_valid  = 1'b0;
         // State Machine
         b_state_d     = b_state_q;
 
@@ -646,29 +646,32 @@ module axi_riscv_amos #(
             end // WAIT_CHANNEL_B, SEND_B
 
             WAIT_COMPLETE_B: begin
-                if (mst_b_valid_i && (mst_b_id_i == id_q)) begin // TODO: Change dependency on R channel if B has to wait in this state
+                if (mst_b_valid_i && (mst_b_id_i == id_q)) begin
                     // Check if store-conditional was successful
                     if (mst_b_resp_i == axi_pkg::RESP_OKAY) begin
                         if (force_wf_q) begin
                             // We were in wf mode so now we are done
                             force_wf_d    = 1'b0;
+                            b_resp_valid  = 1'b1;
                             b_state_d     = FEEDTHROUGH_B;
                         end else begin
                             // We were not in wf mode --> catch response
                             mst_b_ready_o = 1'b1;
                             slv_b_valid_o = 1'b0;
                             // Go into wf mode
-                            restart_d     = 1'b1;
+                            start_wf_d    = 1'b1;
                             force_wf_d    = 1'b1;
                         end
                     end else if (mst_b_resp_i == axi_pkg::RESP_EXOKAY) begin
                         // Modify the B response to regular OK.
+                        b_resp_valid = 1'b1;
                         slv_b_resp_o = axi_pkg::RESP_OKAY;
                         if (slv_b_ready_i) begin
                             b_state_d = FEEDTHROUGH_B;
                         end
                     end else begin
-                        b_state_d = FEEDTHROUGH_B;
+                        b_resp_valid = 1'b1;
+                        b_state_d    = FEEDTHROUGH_B;
                     end
                 end
             end // WAIT_COMPLETE_B
@@ -704,7 +707,7 @@ module axi_riscv_amos #(
             w_cnt_req_q <= '0;
             w_cnt_inj_q <= '0;
             force_wf_q  <= 1'b0;
-            restart_q   <= 1'b0;
+            start_wf_q  <= 1'b0;
             addr_q      <= '0;
             id_q        <= '0;
             size_q      <= '0;
@@ -728,7 +731,7 @@ module axi_riscv_amos #(
             w_cnt_req_q <= w_cnt_req_d;
             w_cnt_inj_q <= w_cnt_inj_d;
             force_wf_q  <= force_wf_d;
-            restart_q   <= restart_d;
+            start_wf_q  <= start_wf_d;
             addr_q      <= addr_d;
             id_q        <= id_d;
             size_q      <= size_d;
@@ -805,7 +808,7 @@ module axi_riscv_amos #(
                     end
                 end
 
-                if (restart_q) begin
+                if (start_wf_q) begin
                     ar_state_d = WAIT_CHANNEL_AR;
                 end
             end // FEEDTHROUGH_AR
@@ -898,7 +901,7 @@ module axi_riscv_amos #(
                     end
                 end
 
-                if (restart_q) begin
+                if (start_wf_q) begin
                     r_d_valid_d = 1'b0;
                     r_state_d   = WAIT_DATA_R;
                 end
@@ -926,8 +929,7 @@ module axi_riscv_amos #(
 
             WAIT_CHANNEL_R, SEND_R: begin
                 // Wait for the R channel to become free and B response to be valid
-                // TODO: Use b_state_d to be one cycle quicker
-                if ((r_free && (b_state_q != WAIT_COMPLETE_B)) || (r_state_q == SEND_R)) begin
+                if ((r_free && (b_resp_valid || b_state_q != WAIT_COMPLETE_B)) || (r_state_q == SEND_R)) begin
                     // Block downstream
                     mst_r_ready_o = 1'b0;
                     // Send R response
@@ -949,7 +951,7 @@ module axi_riscv_amos #(
                     end
                 end
 
-                if (restart_q) begin
+                if (start_wf_q) begin
                     r_d_valid_d = 1'b0;
                     r_state_d   = WAIT_DATA_R;
                 end
