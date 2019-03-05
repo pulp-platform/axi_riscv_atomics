@@ -151,6 +151,7 @@ module axi_riscv_lrsc #(
 
     // Declarations of Signals and Types
 
+    typedef logic [AXI_ADDR_WIDTH-1:0]  axi_addr_t;
     typedef logic [AXI_DATA_WIDTH-1:0]  axi_data_t;
     typedef logic [AXI_ID_WIDTH-1:0]    axi_id_t;
     typedef logic [1:0]                 axi_resp_t;
@@ -207,6 +208,20 @@ module axi_riscv_lrsc #(
     typedef enum logic {
         AW_IDLE, AW_WAIT
     } aw_state_t;
+
+    typedef struct packed {
+        axi_addr_t  addr;
+        logic [2:0] prot;
+        logic [3:0] region;
+        logic [5:0] atop;
+        logic [7:0] len;
+        logic [2:0] size;
+        logic [1:0] burst;
+        logic [3:0] cache;
+        logic [3:0] qos;
+        axi_id_t    id;
+        axi_user_t  user;
+    } aw_chan_t;
 
     typedef enum logic {
         B_NORMAL, B_FORWARD
@@ -285,6 +300,10 @@ module axi_riscv_lrsc #(
     aw_state_t      aw_state_d,                 aw_state_q;
 
     b_state_t       b_state_d,                  b_state_q;
+
+    aw_chan_t       slv_aw,                     mst_aw;
+
+    logic           mst_aw_valid,               mst_aw_ready;
 
     // AR and R Channel
 
@@ -502,7 +521,7 @@ module axi_riscv_lrsc #(
         .rst_ni             (rst_ni),
         .inp_id_i           (mst_aw_id_o),
         .inp_data_i         ({mst_aw_addr_o[AXI_ADDR_WIDTH-1:2], slv_aw_lock_i}),
-        .inp_req_i          (mst_aw_valid_o && mst_aw_ready_i),
+        .inp_req_i          (mst_aw_valid && mst_aw_ready),
         .inp_gnt_o          (wifq_inp_gnt),
         .exists_data_i      (wifq_exists_inp.data),
         .exists_mask_i      (wifq_exists_inp.mask),
@@ -520,7 +539,7 @@ module axi_riscv_lrsc #(
 // pragma translate_off
     always @(posedge clk_i) begin
         if (~rst_ni) begin
-            if (mst_aw_valid_o && mst_aw_ready_i) begin
+            if (mst_aw_valid && mst_aw_ready) begin
                 assert (wifq_inp_gnt) else $error("Missed enqueuing of in-flight write!");
             end
             if (wifq_oup_req && wifq_oup_gnt) begin
@@ -574,18 +593,50 @@ module axi_riscv_lrsc #(
         .pop_i      (b_inj_pop)
     );
 
+    // Fall-through register to hold AW transactin that passed
+    assign slv_aw = {slv_aw_addr_i,
+                     slv_aw_prot_i,
+                     slv_aw_region_i,
+                     slv_aw_atop_i,
+                     slv_aw_len_i,
+                     slv_aw_size_i,
+                     slv_aw_burst_i,
+                     slv_aw_cache_i,
+                     slv_aw_qos_i,
+                     slv_aw_id_i,
+                     slv_aw_user_i};
+    assign {mst_aw_addr_o,
+            mst_aw_prot_o,
+            mst_aw_region_o,
+            mst_aw_atop_o,
+            mst_aw_len_o,
+            mst_aw_size_o,
+            mst_aw_burst_o,
+            mst_aw_cache_o,
+            mst_aw_qos_o,
+            mst_aw_id_o,
+            mst_aw_user_o} = mst_aw;
+
+
+    fall_through_register #(
+        .T (aw_chan_t)
+    ) i_aw_trans_reg (
+        .clk_i       (clk_i),
+        .rst_ni      (rst_ni),
+        .clr_i       (1'b0),
+        .testmode_i  (1'b0),
+        // Input
+        .valid_i     (mst_aw_valid),
+        .ready_o     (mst_aw_ready),
+        .data_i      (slv_aw),
+        // Output
+        .valid_o     (mst_aw_valid_o),
+        .ready_i     (mst_aw_ready_i),
+        .data_o      (mst_aw)
+    );
+
     // Time-Invariant Signal Assignments
-    assign mst_aw_addr_o    = slv_aw_addr_i;
-    assign mst_aw_prot_o    = slv_aw_prot_i;
-    assign mst_aw_region_o  = slv_aw_region_i;
-    assign mst_aw_len_o     = slv_aw_len_i;
-    assign mst_aw_size_o    = slv_aw_size_i;
-    assign mst_aw_burst_o   = slv_aw_burst_i;
     assign mst_aw_lock_o    = 1'b0;
-    assign mst_aw_cache_o   = slv_aw_cache_i;
-    assign mst_aw_qos_o     = slv_aw_qos_i;
-    assign mst_aw_id_o      = slv_aw_id_i;
-    assign mst_aw_user_o    = slv_aw_user_i;
     assign mst_w_data_o     = slv_w_data_i;
     assign mst_w_strb_o     = slv_w_strb_i;
     assign mst_w_user_o     = slv_w_user_i;
@@ -593,7 +644,7 @@ module axi_riscv_lrsc #(
 
     // Control AW Channel
     always_comb begin
-        mst_aw_valid_o          = 1'b0;
+        mst_aw_valid            = 1'b0;
         slv_aw_ready_o          = 1'b0;
         art_check_clr_addr      = 'x;
         art_check_id            = 'x;
@@ -628,7 +679,7 @@ module axi_riscv_lrsc #(
                                 art_check_clr_addr  = slv_aw_addr_i[AXI_ADDR_WIDTH-1:2];
                                 art_check_id        = slv_aw_id_i;
                                 art_check_clr_excl  = slv_aw_lock_i;
-                                if (mst_aw_ready_i) begin
+                                if (mst_aw_ready) begin
                                     art_check_clr_req = 1'b1;
                                 end
                                 if (art_check_clr_gnt) begin
@@ -636,9 +687,9 @@ module axi_riscv_lrsc #(
                                         // Exclusive access and no burst, so check reservation.
                                         if (art_check_res) begin
                                             // Reservation exists, so forward downstream.
-                                            mst_aw_valid_o = 1'b1;
-                                            slv_aw_ready_o = mst_aw_ready_i;
-                                            if (!mst_aw_ready_i) begin
+                                            mst_aw_valid   = 1'b1;
+                                            slv_aw_ready_o = mst_aw_ready;
+                                            if (!mst_aw_ready) begin
                                                 aw_state_d = AW_WAIT;
                                             end
                                         end else begin
@@ -646,22 +697,22 @@ module axi_riscv_lrsc #(
                                             slv_aw_ready_o = 1'b1;
                                         end
                                         // Store command to forward or drop W burst.
-                                        w_cmd_inp = '{forward: art_check_res, id: mst_aw_id_o,
-                                                user: mst_aw_user_o};
+                                        w_cmd_inp = '{forward: art_check_res, id: slv_aw_id_i,
+                                                user: slv_aw_user_i};
                                         w_cmd_push = 1'b1;
                                         // Add B status for this ID (exclusive if there is a
                                         // reservation, inject otherwise).
                                         b_status_inp_cmd = art_check_res ? B_EXCLUSIVE : B_INJECT;
                                     end else begin
                                         // Non-exclusive access or burst, so forward downstream.
-                                        mst_aw_valid_o = 1'b1;
-                                        slv_aw_ready_o = mst_aw_ready_i;
+                                        mst_aw_valid   = 1'b1;
+                                        slv_aw_ready_o = mst_aw_ready;
                                         // Store command to forward W burst.
-                                        w_cmd_inp = '{forward: 1'b1, id: 'x, user: 'x};
+                                        w_cmd_inp  = '{forward: 1'b1, id: 'x, user: 'x};
                                         w_cmd_push = 1'b1;
                                         // Track B response as regular-okay.
                                         b_status_inp_cmd = B_REGULAR;
-                                        if (!mst_aw_ready_i) begin
+                                        if (!mst_aw_ready) begin
                                             aw_state_d = AW_WAIT;
                                         end
                                     end
@@ -673,14 +724,14 @@ module axi_riscv_lrsc #(
                     end else begin
                         // Outside exclusively-accessible address range, so bypass any
                         // modifications.
-                        mst_aw_valid_o = 1'b1;
-                        slv_aw_ready_o = mst_aw_ready_i;
-                        if (mst_aw_ready_i) begin
+                        mst_aw_valid   = 1'b1;
+                        slv_aw_ready_o = mst_aw_ready;
+                        if (mst_aw_ready) begin
                             // Store command to forward W burst.
                             w_cmd_inp = '{forward: 1'b1, id: 'x, user: 'x};
                             w_cmd_push = 1'b1;
                             // Track B response as regular-okay.
-                            b_status_inp_id = slv_aw_id_i;
+                            b_status_inp_id  = slv_aw_id_i;
                             b_status_inp_cmd = B_REGULAR;
                             b_status_inp_req = 1'b1;
                         end
@@ -689,9 +740,9 @@ module axi_riscv_lrsc #(
             end
 
             AW_WAIT: begin
-                mst_aw_valid_o = 1'b1;
-                slv_aw_ready_o = mst_aw_ready_i;
-                if (mst_aw_ready_i) begin
+                mst_aw_valid   = 1'b1;
+                slv_aw_ready_o = mst_aw_ready;
+                if (mst_aw_ready) begin
                     aw_state_d = AW_IDLE;
                 end
             end
