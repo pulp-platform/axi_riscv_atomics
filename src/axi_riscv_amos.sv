@@ -1063,11 +1063,14 @@ module axi_riscv_amos #(
 
 `ifdef AMO_PERF_COUNTERS
     logic [RISCV_WORD_WIDTH-1:0]    cnt_amo_d,          cnt_amo_q,
+                                    cycle_amo_d,        cycle_amo_q,
                                     cnt_amo_b2b_d,      cnt_amo_b2b_q,
                                     stall_amo_b2b_d,    stall_amo_b2b_q,
                                     cnt_col_d,          cnt_col_q,
                                     stall_col_d,        stall_col_q,
-                                    cnt_wf_d,           cnt_wf_q;
+                                    cnt_wf_d,           cnt_wf_q,
+                                    cycle_wf_d,         cycle_wf_q,
+                                    ref_cycle_d,        ref_cycle_q;
 
     // Helper signals
     logic                           collision_d,    collision_q,
@@ -1078,44 +1081,62 @@ module axi_riscv_amos #(
 
     // Assign output
     assign amos_perf_cnt_o[0] = cnt_amo_q;
-    assign amos_perf_cnt_o[1] = cnt_amo_b2b_q;
-    assign amos_perf_cnt_o[2] = stall_amo_b2b_q;
-    assign amos_perf_cnt_o[3] = cnt_col_q;
-    assign amos_perf_cnt_o[4] = stall_col_q;
-    assign amos_perf_cnt_o[5] = cnt_wf_q;
+    assign amos_perf_cnt_o[1] = cycle_amo_q;
+    assign amos_perf_cnt_o[2] = cnt_amo_b2b_q;
+    assign amos_perf_cnt_o[3] = stall_amo_b2b_q;
+    assign amos_perf_cnt_o[4] = cnt_col_q;
+    assign amos_perf_cnt_o[5] = stall_col_q;
+    assign amos_perf_cnt_o[6] = cnt_wf_q;
+    assign amos_perf_cnt_o[7] = cycle_wf_q;
+    assign amos_perf_cnt_o[8] = ref_cycle_q;
 
     always_comb begin
         // Default FF
         cnt_amo_d       = cnt_amo_q;
+        cycle_amo_d     = cycle_amo_q;
         cnt_amo_b2b_d   = cnt_amo_b2b_q;
         stall_amo_b2b_d = stall_amo_b2b_q;
         cnt_col_d       = cnt_col_q;
         stall_col_d     = stall_col_q;
         cnt_wf_d        = cnt_wf_q;
+        cycle_wf_d      = cycle_wf_q;
+        ref_cycle_d     = ref_cycle_q;
 
         // Count number of AMOs
         if (amos_perf_cnt_act_i[0] && slv_aw_valid_i && slv_aw_atop_i && adapter_ready) begin
             cnt_amo_d       = cnt_amo_q + 1;
         end
+        // Count number of cycles spend executing AMOs
+        if (amos_perf_cnt_act_i[1] && !adapter_ready) begin
+            cycle_amo_d     = cycle_amo_q + 1;
+        end
         // Count number of times amos arrive back to back
-        if (amos_perf_cnt_act_i[1] && amo_b2b_d & !amo_b2b_q) begin
+        if (amos_perf_cnt_act_i[2] && amo_b2b_d & !amo_b2b_q) begin
             cnt_amo_b2b_d   = cnt_amo_b2b_q + 1;
         end
         // Count stall cycles by two AMOs arriving back to back
-        if (amos_perf_cnt_act_i[2] && amo_b2b_d) begin
+        if (amos_perf_cnt_act_i[3] && amo_b2b_d) begin
             stall_amo_b2b_d = stall_amo_b2b_q + 1;
         end
         // Count number of times a write collision stalls the AMO
-        if (amos_perf_cnt_act_i[3] && collision_d & !collision_q) begin
+        if (amos_perf_cnt_act_i[4] && collision_d & !collision_q) begin
             cnt_col_d       = cnt_col_q + 1;
         end
         // Count number of cycles a write collision stalls the AMO
-        if (amos_perf_cnt_act_i[4] && collision_d) begin
+        if (amos_perf_cnt_act_i[5] && collision_d) begin
             stall_col_d     = stall_col_q + 1;
         end
-        // Count number of times the design takes the WF path
-        if (amos_perf_cnt_act_i[5] && start_wf_q) begin
+        // Count number of times a AMO Adapter enters the WF mode
+        if (amos_perf_cnt_act_i[6] && start_wf_q) begin
             cnt_wf_d        = cnt_wf_q + 1;
+        end
+        // Count number of cycles AMO spends in WF mode
+        if (amos_perf_cnt_act_i[7] && force_wf_q) begin
+            cycle_wf_d      = cycle_wf_q + 1;
+        end
+        // Count reference cycles
+        if (amos_perf_cnt_act_i[8]) begin
+            ref_cycle_d     = ref_cycle_q + 1;
         end
     end
 
@@ -1123,20 +1144,26 @@ module axi_riscv_amos #(
     always_ff @(posedge clk_i or negedge rst_ni) begin
         if(~rst_ni) begin
             cnt_amo_q       <= '0;
+            cycle_amo_q     <= '0;
             cnt_amo_b2b_q   <= '0;
             stall_amo_b2b_q <= '0;
             cnt_col_q       <= '0;
             stall_col_q     <= '0;
             cnt_wf_q        <= '0;
+            cycle_wf_q      <= '0;
+            ref_cycle_q     <= '0;
             collision_q     <= '0;
             amo_b2b_q       <= '0;
         end else begin
             cnt_amo_q       <= amos_perf_cnt_rst_ni[0] ? cnt_amo_d       : '0;
-            cnt_amo_b2b_q   <= amos_perf_cnt_rst_ni[1] ? cnt_amo_b2b_d   : '0;
-            stall_amo_b2b_q <= amos_perf_cnt_rst_ni[2] ? stall_amo_b2b_d : '0;
-            cnt_col_q       <= amos_perf_cnt_rst_ni[3] ? cnt_col_d       : '0;
-            stall_col_q     <= amos_perf_cnt_rst_ni[4] ? stall_col_d     : '0;
-            cnt_wf_q        <= amos_perf_cnt_rst_ni[5] ? cnt_wf_d        : '0;
+            cycle_amo_q     <= amos_perf_cnt_rst_ni[1] ? cycle_amo_d     : '0;
+            cnt_amo_b2b_q   <= amos_perf_cnt_rst_ni[2] ? cnt_amo_b2b_d   : '0;
+            stall_amo_b2b_q <= amos_perf_cnt_rst_ni[3] ? stall_amo_b2b_d : '0;
+            cnt_col_q       <= amos_perf_cnt_rst_ni[4] ? cnt_col_d       : '0;
+            stall_col_q     <= amos_perf_cnt_rst_ni[5] ? stall_col_d     : '0;
+            cnt_wf_q        <= amos_perf_cnt_rst_ni[6] ? cnt_wf_d        : '0;
+            cycle_wf_q      <= amos_perf_cnt_rst_ni[7] ? cycle_wf_d      : '0;
+            ref_cycle_q     <= amos_perf_cnt_rst_ni[8] ? ref_cycle_d     : '0;
             collision_q     <= collision_d;
             amo_b2b_q       <= amo_b2b_d;
         end

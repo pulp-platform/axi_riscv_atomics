@@ -15,11 +15,14 @@
 `define REG_START           6'h01 //BASEADDR+0x04
 `define REG_STOP            6'h02 //BASEADDR+0x08
 `define REG_NUM_AMOS        6'h03 //BASEADDR+0x0C
-`define REG_NUM_AMOS_B2B    6'h04 //BASEADDR+0x10
-`define REG_STALL_AMOS_B2B  6'h05 //BASEADDR+0x14
-`define REG_NUM_COL         6'h06 //BASEADDR+0x18
-`define REG_STALL_COL       6'h07 //BASEADDR+0x1C
-`define REG_NUM_WF          6'h08 //BASEADDR+0x20
+`define REG_CYCLE_AMOS      6'h04 //BASEADDR+0x10
+`define REG_NUM_AMOS_B2B    6'h05 //BASEADDR+0x14
+`define REG_STALL_AMOS_B2B  6'h06 //BASEADDR+0x18
+`define REG_NUM_COL         6'h07 //BASEADDR+0x1C
+`define REG_STALL_COL       6'h08 //BASEADDR+0x20
+`define REG_NUM_WF          6'h09 //BASEADDR+0x24
+`define REG_CYCLE_WF        6'h0A //BASEADDR+0x28
+`define REG_CYCLE_REF       6'h0B //BASEADDR+0x2C
 
 module apb_amos_perf_cnt_ctrl
 #(
@@ -65,11 +68,14 @@ module apb_amos_perf_cnt_ctrl
             `REG_START:          begin PRDATA = amos_perf_cnt_act; end
             `REG_STOP:           begin PRDATA = amos_perf_cnt_act; end
             `REG_NUM_AMOS:       begin PRDATA = amos_perf_cnt_i[0]; end
-            `REG_NUM_AMOS_B2B:   begin PRDATA = amos_perf_cnt_i[1]; end
-            `REG_STALL_AMOS_B2B: begin PRDATA = amos_perf_cnt_i[2]; end
-            `REG_NUM_COL:        begin PRDATA = amos_perf_cnt_i[3]; end
-            `REG_STALL_COL:      begin PRDATA = amos_perf_cnt_i[4]; end
-            `REG_NUM_WF:         begin PRDATA = amos_perf_cnt_i[5]; end
+            `REG_CYCLE_AMOS:     begin PRDATA = amos_perf_cnt_i[1]; end
+            `REG_NUM_AMOS_B2B:   begin PRDATA = amos_perf_cnt_i[2]; end
+            `REG_STALL_AMOS_B2B: begin PRDATA = amos_perf_cnt_i[3]; end
+            `REG_NUM_COL:        begin PRDATA = amos_perf_cnt_i[4]; end
+            `REG_STALL_COL:      begin PRDATA = amos_perf_cnt_i[5]; end
+            `REG_NUM_WF:         begin PRDATA = amos_perf_cnt_i[6]; end
+            `REG_CYCLE_WF:       begin PRDATA = amos_perf_cnt_i[7]; end
+            `REG_CYCLE_REF:      begin PRDATA = amos_perf_cnt_i[8]; end
             default:             begin PRDATA = '0; end
         endcase
     end
@@ -81,7 +87,7 @@ module apb_amos_perf_cnt_ctrl
             amos_perf_cnt_act   <= '0;
         end else begin
             // Default
-            amos_perf_cnt_rst_n = '1;
+            amos_perf_cnt_rst_n <= '1;
 
             if (PSEL && PENABLE && PWRITE) begin
                 case (s_apb_addr)
