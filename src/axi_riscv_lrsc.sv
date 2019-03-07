@@ -899,7 +899,7 @@ module axi_riscv_lrsc #(
     assign b_status_oup_pop = slv_b_valid && slv_b_ready;
 
     // Register in front of slv_b to prevent changes by FSM while valid and not yet ready.
-    stream_register #(
+    fall_through_register #(
         .T  (b_chan_t)
     ) slv_b_reg (
         .clk_i      (clk_i),
