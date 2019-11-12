@@ -1,5 +1,6 @@
 axi_riscv_atomics:
   files: [
+    src/apb_amos_perf_cnt_ctrl.sv,
     src/axi_res_tbl.sv,
     src/axi_riscv_amos_alu.sv,
     src/axi_riscv_amos.sv,

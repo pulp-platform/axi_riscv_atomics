@@ -14,6 +14,7 @@ sources:
   # Level 0
   - src/axi_res_tbl.sv
   - src/axi_riscv_amos_alu.sv
+  - src/apb_amos_perf_cnt_ctrl.sv
   # Level 1
   - src/axi_riscv_amos.sv
   - src/axi_riscv_lrsc.sv
