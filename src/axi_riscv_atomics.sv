@@ -16,6 +16,8 @@
 //
 // Maintainer: Andreas Kurth <akurth@iis.ee.ethz.ch>
 
+`define AMO_PERF_COUNTERS 32
+
 module axi_riscv_atomics #(
     /// AXI Parameters
     parameter int unsigned AXI_ADDR_WIDTH = 0,
@@ -35,6 +37,13 @@ module axi_riscv_atomics #(
 ) (
     input logic                         clk_i,
     input logic                         rst_ni,
+
+    // Performance counters
+    `ifdef AMO_PERF_COUNTERS
+    output logic [RISCV_WORD_WIDTH-1:0]   amos_perf_cnt_o [`AMO_PERF_COUNTERS-1:0],
+    input  logic [`AMO_PERF_COUNTERS-1:0] amos_perf_cnt_act_i,
+    input  logic [`AMO_PERF_COUNTERS-1:0] amos_perf_cnt_rst_ni,
+    `endif
 
     /// Slave Interface
     input  logic [AXI_ADDR_WIDTH-1:0]   slv_aw_addr_i,
@@ -205,6 +214,11 @@ module axi_riscv_atomics #(
     ) i_amos (
         .clk_i              ( clk_i             ),
         .rst_ni             ( rst_ni            ),
+    `ifdef AMO_PERF_COUNTERS
+        .amos_perf_cnt_o     ( amos_perf_cnt_o     ),
+        .amos_perf_cnt_act_i  ( amos_perf_cnt_act_i ),
+        .amos_perf_cnt_rst_ni ( amos_perf_cnt_rst_ni ),
+    `endif
         .slv_aw_addr_i      ( slv_aw_addr_i     ),
         .slv_aw_prot_i      ( slv_aw_prot_i     ),
         .slv_aw_region_i    ( slv_aw_region_i   ),

@@ -15,6 +15,8 @@
 //
 // Maintainer: Andreas Kurth <akurth@iis.ee.ethz.ch>
 
+`define AMO_PERF_COUNTERS 32
+
 module axi_riscv_amos_wrap #(
     /// AXI Parameters
     parameter int unsigned AXI_ADDR_WIDTH       = 0,
@@ -32,6 +34,11 @@ module axi_riscv_amos_wrap #(
 ) (
     input  logic    clk_i,
     input  logic    rst_ni,
+    `ifdef AMO_PERF_COUNTERS
+    output logic [RISCV_WORD_WIDTH-1:0]   amos_perf_cnt_o [`AMO_PERF_COUNTERS-1:0],
+    input  logic [`AMO_PERF_COUNTERS-1:0] amos_perf_cnt_act_i,
+    input  logic [`AMO_PERF_COUNTERS-1:0] amos_perf_cnt_rst_ni,
+    `endif
     AXI_BUS.Master  mst,
     AXI_BUS.Slave   slv
 );
@@ -46,6 +53,11 @@ module axi_riscv_amos_wrap #(
     ) i_amos (
         .clk_i           ( clk_i         ),
         .rst_ni          ( rst_ni        ),
+    `ifdef AMO_PERF_COUNTERS
+        .amos_perf_cnt_o     ( amos_perf_cnt_o     ),
+        .amos_perf_cnt_act_i  ( amos_perf_cnt_act_i ),
+        .amos_perf_cnt_rst_ni ( amos_perf_cnt_rst_ni ),
+    `endif
         .slv_aw_addr_i   ( slv.aw_addr   ),
         .slv_aw_prot_i   ( slv.aw_prot   ),
         .slv_aw_region_i ( slv.aw_region ),
