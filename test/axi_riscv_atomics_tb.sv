@@ -207,14 +207,14 @@ module automatic axi_riscv_atomics_tb;
         @(posedge clk);
         wait (rst_n);
         // Run tests!
-        // test_all_amos();
+        test_all_amos();
         test_same_address();
         test_amo_write_consistency();
         // test_interleaving(); // Only works on old memory controller
-        // test_atomic_counter();
+        test_atomic_counter();
         random_amo();
 
-        // overtake_r();
+        overtake_r();
 
         finished = 1;
     end
@@ -313,7 +313,7 @@ module automatic axi_riscv_atomics_tb;
                     end
 
                     repeat (500) @(posedge clk);
-                    repeat (20000) begin
+                    repeat (2000) begin
                         void'(randomize(address));
                         void'(randomize(data_init));
                         void'(randomize(data_amo));
