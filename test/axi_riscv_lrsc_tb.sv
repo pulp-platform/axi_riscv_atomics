@@ -49,8 +49,8 @@ module axi_riscv_lrsc_tb #(
             rst_n;
 
     clk_rst_gen #(
-        .CLK_PERIOD     (TCLK),
-        .RST_CLK_CYCLES (5)
+        .ClkPeriod      (TCLK),
+        .RstClkCycles   (5)
     ) i_clk_rst_gen (
         .clk_o  (clk),
         .rst_no (rst_n)
