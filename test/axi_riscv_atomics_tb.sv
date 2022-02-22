@@ -9,8 +9,6 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-`timescale 10ps/10ps
-
 `include "axi/assign.svh"
 
 module automatic axi_riscv_atomics_tb;
@@ -37,6 +35,28 @@ module automatic axi_riscv_atomics_tb;
     logic clk   = 0;
     logic rst_n = 0;
 
+    // Generate clock
+    localparam tCK = 1ns;
+
+    initial begin : clk_gen
+        #tCK;
+        while (1) begin
+            clk <= 1;
+            #(tCK/2);
+            clk <= 0;
+            #(tCK/2);
+        end
+    end
+
+    initial begin : rst_gen
+        rst_n <= 0;
+        @(posedge clk);
+        #(tCK/2);
+        rst_n <= 1;
+    end
+
+    initial $timeformat(-9, 2, " ns", 10);
+
     // Testbench status
     logic finished = 0;
     int unsigned num_errors = 0;
@@ -48,13 +68,21 @@ module automatic axi_riscv_atomics_tb;
         .AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH )
     ) axi_mem();
+    AXI_BUS_DV #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
+        .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH )
+    ) axi_mem_dv(clk);
+
+    `AXI_ASSIGN_MONITOR(axi_mem_dv, axi_mem)
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
         .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH )
-    ) axi_dut[0:0]();
+    ) axi_dut();
 
     // Simulated clusters
     AXI_BUS #(
@@ -79,43 +107,41 @@ module automatic axi_riscv_atomics_tb;
         end
     endgenerate
 
-    // Module instantiation
-    axi_node_intf_wrap #(
-        .NB_MASTER      ( 1              ), // To Memory
-        .NB_SLAVE       ( NUM_MASTERS    ), // From clusters
-        .NB_REGION      ( 1              ),
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
-        .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_WIDTH_M ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH )
-    ) i_axi_node (
-        // Clock and Reset
-        .clk            ( clk            ),
-        .rst_n          ( rst_n          ),
-        .test_en_i      ( 1'b0           ),
-        // AXI
-        .slave          ( axi_cl         ),
-        .master         ( axi_dut        ),
-        // Memory map
-        .start_addr_i   ( MEM_START_ADDR ),
-        .end_addr_i     ( MEM_END_ADDR   ),
-        .valid_rule_i   ( 1'b1           )
+    // Multiplexer between simulated clusters and atomics adapter
+    axi_mux_intf #(
+        .SLV_AXI_ID_WIDTH   ( AXI_ID_WIDTH_M ),
+        .MST_AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
+        .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH ),
+        .AXI_DATA_WIDTH     ( AXI_DATA_WIDTH ),
+        .AXI_USER_WIDTH     ( AXI_USER_WIDTH ),
+        .NO_SLV_PORTS       ( NUM_MASTERS    ),
+        .MAX_W_TRANS        ( 8              ),
+        .FALL_THROUGH       ( 1'b1           ),
+        .SPILL_AW           ( 1'b0           ),
+        .SPILL_W            ( 1'b0           ),
+        .SPILL_B            ( 1'b0           ),
+        .SPILL_AR           ( 1'b0           ),
+        .SPILL_R            ( 1'b0           )
+    ) i_axi_mux (
+        .clk_i  ( clk     ),
+        .rst_ni ( rst_n   ),
+        .test_i ( 1'b0    ),
+        .slv    ( axi_cl  ),
+        .mst    ( axi_dut )
     );
 
     // Memory accessible over AXI bus
-    // The AXI addresses are byte-addressed and shifted
-    // so the memory is word-addressed. The memory size
-    // is 2^MEM_ADDR_WIDTH * AXI_DATA_WIDTH bits.
-    axi_memory #(
+    axi_sim_mem_intf #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
         .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH ),
-        .MEM_ADDR_WIDTH ( MEM_ADDR_WIDTH )
-    ) i_axi_memory (
-        .clk_i   ( clk     ),
-        .rst_ni  ( rst_n   ),
-        .slv     ( axi_mem )
+        .APPL_DELAY     ( tCK * 1 / 4    ),
+        .ACQ_DELAY      ( tCK * 3 / 4    )
+    ) i_axi_sim_mem (
+        .clk_i      ( clk     ),
+        .rst_ni     ( rst_n   ),
+        .axi_slv    ( axi_mem )
     );
 
     // axi_riscv_amos_wrap #(
@@ -128,10 +154,10 @@ module automatic axi_riscv_atomics_tb;
         .AXI_MAX_WRITE_TXNS ( 31             ),
         .RISCV_WORD_WIDTH   ( SYS_DATA_WIDTH )
     ) i_axi_atomic_adapter (
-        .clk_i    ( clk        ),
-        .rst_ni   ( rst_n      ),
-        .mst      ( axi_mem    ),
-        .slv      ( axi_dut[0] )
+        .clk_i    ( clk     ),
+        .rst_ni   ( rst_n   ),
+        .mst      ( axi_mem ),
+        .slv      ( axi_dut )
     );
 
     // AXI Testbench
@@ -171,29 +197,7 @@ module automatic axi_riscv_atomics_tb;
         .AXI_ID_WIDTH_M( AXI_ID_WIDTH_M ),
         .AXI_ID_WIDTH_S( AXI_ID_WIDTH_S ),
         .AXI_USER_WIDTH( AXI_USER_WIDTH )
-    ) gold_memory = new(i_axi_memory.axi_mem_int);
-
-    // Generate clock
-    localparam tCK = 1ns;
-
-    initial begin : clk_gen
-        #tCK;
-        while (1) begin
-            clk <= 1;
-            #(tCK/2);
-            clk <= 0;
-            #(tCK/2);
-        end
-    end
-
-    initial begin : rst_gen
-        rst_n <= 0;
-        @(posedge clk);
-        #(tCK/2);
-        rst_n <= 1;
-    end
-
-    initial $timeformat(-9, 2, " ns", 10);
+    ) gold_memory = new(axi_mem_dv);
 
     /*====================================================================
     =                                Main                                =
@@ -232,10 +236,10 @@ module automatic axi_riscv_atomics_tb;
 
         fork
             while (timeout < MAX_TIMEOUT) begin
-                handshake = {axi_dut[0].aw_valid, axi_dut[0].aw_ready, axi_dut[0].ar_valid, axi_dut[0].ar_ready};
+                handshake = {axi_dut.aw_valid, axi_dut.aw_ready, axi_dut.ar_valid, axi_dut.ar_ready};
                 #100ns;
                 @(posedge clk);
-                if (handshake != {axi_dut[0].aw_valid, axi_dut[0].aw_ready, axi_dut[0].ar_valid, axi_dut[0].ar_ready}) begin
+                if (handshake != {axi_dut.aw_valid, axi_dut.aw_ready, axi_dut.ar_valid, axi_dut.ar_ready}) begin
                     timeout = 0;
                 end else begin
                     timeout += 1;

@@ -681,61 +681,6 @@ add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_a
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/head_tail_free_idx
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/match_idx
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/linked_data_free_idx
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/clk_i
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_id
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_addr
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_len
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_size
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_burst
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_lock
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_cache
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_prot
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_qos
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_region
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_atop
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_user
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_valid
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/aw_ready
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/w_data
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/w_strb
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/w_last
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/w_user
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/w_valid
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/w_ready
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/b_id
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/b_resp
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/b_user
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/b_valid
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/b_ready
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_id
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_addr
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_len
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_size
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_burst
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_lock
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_cache
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_prot
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_qos
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_region
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_user
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_valid
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/ar_ready
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/r_id
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/r_data
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/r_resp
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/r_last
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/r_user
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/r_valid
-add wave -noupdate -group AXIMemory -group LinearizationBus /axi_riscv_atomics_tb/i_axi_memory/axi_mem_int/r_ready
-add wave -noupdate -group AXIMemory -expand -group Memory /axi_riscv_atomics_tb/i_axi_memory/i_mem/CLK
-add wave -noupdate -group AXIMemory -expand -group Memory /axi_riscv_atomics_tb/i_axi_memory/i_mem/INITN
-add wave -noupdate -group AXIMemory -expand -group Memory /axi_riscv_atomics_tb/i_axi_memory/i_mem/CEN
-add wave -noupdate -group AXIMemory -expand -group Memory /axi_riscv_atomics_tb/i_axi_memory/i_mem/A
-add wave -noupdate -group AXIMemory -expand -group Memory /axi_riscv_atomics_tb/i_axi_memory/i_mem/WEN
-add wave -noupdate -group AXIMemory -expand -group Memory /axi_riscv_atomics_tb/i_axi_memory/i_mem/D
-add wave -noupdate -group AXIMemory -expand -group Memory /axi_riscv_atomics_tb/i_axi_memory/i_mem/BEN
-add wave -noupdate -group AXIMemory -expand -group Memory /axi_riscv_atomics_tb/i_axi_memory/i_mem/Q
-add wave -noupdate -group AXIMemory -expand -group Memory /axi_riscv_atomics_tb/i_axi_memory/i_mem/M
 add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/clk
 add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/rst_n
 add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/test_en_i
