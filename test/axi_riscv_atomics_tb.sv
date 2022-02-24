@@ -255,10 +255,13 @@ module automatic axi_riscv_atomics_tb;
             $display("\nSUCCESS\n");
         end else if (finished) begin
             $display("\nFINISHED\n");
-            $display("Encountered %d errors.\n", num_errors);
+            if (num_errors > 0) begin
+                $fatal(1, "Encountered %d errors.", num_errors);
+            end else begin
+                $display("All tests passed.");
+            end
         end else begin
-            $display("\nTIMEOUT\n");
-            $display("Encountered %d errors.\n", num_errors);
+            $fatal(1, "TIMEOUT");
         end
 
         $stop;
