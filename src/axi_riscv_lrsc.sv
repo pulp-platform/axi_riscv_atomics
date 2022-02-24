@@ -487,15 +487,24 @@ module axi_riscv_lrsc #(
     );
 
     // ID Queue to track downstream W bursts and their pending B responses.
+    // Workaround for bug in Questa (at least 2018.07 is affected): Flatten the enum into a logic
+    // vector before using that type when instantiating `id_queue`.
+    `ifdef QUESTA
+    typedef logic [$bits(b_cmd_t)-1:0] b_cmd_flat_t;
+    `else
+    typedef b_cmd_t b_cmd_flat_t;
+    `endif
+    b_cmd_flat_t b_status_inp_cmd_flat, b_status_oup_cmd_flat;
+    assign b_status_inp_cmd_flat = b_cmd_flat_t'(b_status_inp_cmd);
     id_queue #(
         .ID_WIDTH   (AXI_ID_WIDTH),
         .CAPACITY   (AXI_MAX_WRITE_TXNS),
-        .data_t     (b_cmd_t)
+        .data_t     (b_cmd_flat_t)
     ) i_b_status_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
         .inp_id_i           (b_status_inp_id),
-        .inp_data_i         (b_status_inp_cmd),
+        .inp_data_i         (b_status_inp_cmd_flat),
         .inp_req_i          (b_status_inp_req),
         .inp_gnt_o          (b_status_inp_gnt),
         .exists_data_i      (),
@@ -506,10 +515,11 @@ module axi_riscv_lrsc #(
         .oup_id_i           (b_status_oup_id),
         .oup_pop_i          (b_status_oup_pop),
         .oup_req_i          (b_status_oup_req),
-        .oup_data_o         (b_status_oup_cmd),
+        .oup_data_o         (b_status_oup_cmd_flat),
         .oup_data_valid_o   (b_status_oup_valid),
         .oup_gnt_o          (b_status_oup_gnt)
     );
+    assign b_status_oup_cmd = b_cmd_t'(b_status_oup_cmd_flat);
 
     // ID Queue to track in-flight writes.
     id_queue #(
