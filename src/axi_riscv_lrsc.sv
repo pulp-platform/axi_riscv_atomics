@@ -159,7 +159,7 @@ module axi_riscv_lrsc #(
     typedef logic [AXI_ADDR_WIDTH-3:0]  res_addr_t; // Track reservations word wise.
 
     typedef enum logic [1:0] {
-        B_U='x, B_REGULAR='0, B_EXCLUSIVE, B_INJECT
+        B_REGULAR='0, B_EXCLUSIVE, B_INJECT
     } b_cmd_t;
 
     typedef struct packed {
@@ -373,9 +373,9 @@ module axi_riscv_lrsc #(
     // Control R Channel
     always_comb begin
         mst_r_ready_o   = 1'b0;
-        slv_r.resp      = 'x;
+        slv_r.resp      = '0;
         slv_r_valid     = 1'b0;
-        rifq_oup_id     = 'x;
+        rifq_oup_id     = '0;
         rifq_oup_pop    = 1'b0;
         rifq_oup_req    = 1'b0;
         if (mst_r_valid_i && slv_r_ready) begin
@@ -408,12 +408,12 @@ module axi_riscv_lrsc #(
     always_comb begin
         mst_ar_valid_o                  = 1'b0;
         slv_ar_ready_o                  = 1'b0;
-        ar_push_addr                    = 'x;
-        ar_push_excl                    = 'x;
-        ar_push_id                      = 'x;
-        ar_push_res                     = 'x;
+        ar_push_addr                    = '0;
+        ar_push_excl                    = '0;
+        ar_push_id                      = '0;
+        ar_push_res                     = '0;
         ar_push_valid                   = 1'b0;
-        ar_wifq_exists_inp.data.addr    = 'x;
+        ar_wifq_exists_inp.data.addr    = '0;
         ar_wifq_exists_inp.data.excl    = 1'b0;
         ar_wifq_exists_inp.mask         = '1;
         ar_wifq_exists_inp.mask[0]      = 1'b0; // Don't care on `excl` bit.
@@ -646,17 +646,17 @@ module axi_riscv_lrsc #(
     always_comb begin
         mst_aw_valid            = 1'b0;
         slv_aw_ready_o          = 1'b0;
-        art_check_clr_addr      = 'x;
-        art_check_id            = 'x;
-        art_check_clr_excl      = 'x;
+        art_check_clr_addr      = '0;
+        art_check_id            = '0;
+        art_check_clr_excl      = '0;
         art_check_clr_req       = 1'b0;
-        aw_wifq_exists_inp.data = 'x;
+        aw_wifq_exists_inp.data = '0;
         aw_wifq_exists_inp.mask = '1;
         aw_wifq_exists_req      = 1'b0;
         b_status_inp_id         = '0;
-        b_status_inp_cmd        = B_U;
+        b_status_inp_cmd        = B_REGULAR;
         b_status_inp_req        = 1'b0;
-        w_cmd_inp               = 'x;
+        w_cmd_inp               = '0;
         w_cmd_push              = 1'b0;
         aw_state_d              = aw_state_q;
 
@@ -708,7 +708,7 @@ module axi_riscv_lrsc #(
                                         mst_aw_valid   = 1'b1;
                                         slv_aw_ready_o = mst_aw_ready;
                                         // Store command to forward W burst.
-                                        w_cmd_inp  = '{forward: 1'b1, id: 'x, user: 'x};
+                                        w_cmd_inp  = '{forward: 1'b1, id: '0, user: '0};
                                         w_cmd_push = 1'b1;
                                         // Track B response as regular-okay.
                                         b_status_inp_cmd = B_REGULAR;
@@ -728,7 +728,7 @@ module axi_riscv_lrsc #(
                         slv_aw_ready_o = mst_aw_ready;
                         if (mst_aw_ready) begin
                             // Store command to forward W burst.
-                            w_cmd_inp = '{forward: 1'b1, id: 'x, user: 'x};
+                            w_cmd_inp = '{forward: 1'b1, id: '0, user: '0};
                             w_cmd_push = 1'b1;
                             // Track B response as regular-okay.
                             b_status_inp_id  = slv_aw_id_i;
@@ -766,7 +766,7 @@ module axi_riscv_lrsc #(
     always_comb begin
         mst_w_valid_o   = 1'b0;
         slv_w_ready_o   = 1'b0;
-        b_inj_inp       = 'x;
+        b_inj_inp       = '0;
         b_inj_push      = 1'b0;
         w_cmd_pop       = 1'b0;
         if (slv_w_valid_i && !w_cmd_empty && !b_inj_full) begin
@@ -807,7 +807,7 @@ module axi_riscv_lrsc #(
         slv_b_valid         = 1'b0;
         mst_b_ready         = 1'b0;
         b_inj_pop           = 1'b0;
-        b_status_oup_id     = 'x;
+        b_status_oup_id     = '0;
         b_status_oup_req    = 1'b0;
         b_state_d           = b_state_q;
 
