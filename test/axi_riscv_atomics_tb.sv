@@ -36,7 +36,7 @@ module automatic axi_riscv_atomics_tb;
     logic rst_n = 0;
 
     // Generate clock
-    localparam tCK = 1ns;
+    localparam tCK = 10ns;
 
     initial begin : clk_gen
         #tCK;
