@@ -337,7 +337,7 @@ module automatic axi_riscv_atomics_tb;
                         // Execute a write with data init, a AMO with data_amo and read result
                         write_amo_read_cycle(m, address, data_init, data_amo, size, 0, atop);
                         // Wait a random amount of cycles
-                        repeat ($urandom_range(100,1000)) @(posedge clk);
+                        repeat ($urandom_range(100,MAX_TIMEOUT/2)) @(posedge clk);
                     end
                 end
             join_none
