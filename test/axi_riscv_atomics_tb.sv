@@ -168,10 +168,8 @@ module automatic axi_riscv_atomics_tb;
         .IW( AXI_ID_WIDTH_M ),
         .UW( AXI_USER_WIDTH ),
         .SW( SYS_DATA_WIDTH ),
-        // .TA( 200ps          ),
-        // .TT( 700ps          )
-        .TA( 0ps          ),
-        .TT( 900ps          )
+        .TA( tCK * 1 / 4    ),
+        .TT( tCK * 3 / 4    )
     ) axi_dut_master[NUM_MASTERS];
 
     generate
