@@ -953,7 +953,10 @@ module automatic axi_riscv_atomics_tb;
             void'(randomize(trans_id));
         end
         fork
-            axi_dut_master[driver].axi_read(address, act_data, size, trans_id);
+            begin
+                @(posedge clk);
+                axi_dut_master[driver].axi_read(address, act_data, size, trans_id);
+            end
             gold_memory.read(address, exp_data, size, trans_id, driver);
         join
         assert(act_data == exp_data) else begin
