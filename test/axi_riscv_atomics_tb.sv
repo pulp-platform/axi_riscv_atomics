@@ -194,7 +194,8 @@ module automatic axi_riscv_atomics_tb;
         .AXI_DATA_WIDTH( AXI_DATA_WIDTH ),
         .AXI_ID_WIDTH_M( AXI_ID_WIDTH_M ),
         .AXI_ID_WIDTH_S( AXI_ID_WIDTH_S ),
-        .AXI_USER_WIDTH( AXI_USER_WIDTH )
+        .AXI_USER_WIDTH( AXI_USER_WIDTH ),
+        .ACQ_DELAY     ( tCK * 3 / 4    )
     ) gold_memory = new(axi_mem_dv);
 
     /*====================================================================

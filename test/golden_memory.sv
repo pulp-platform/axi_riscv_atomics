@@ -18,7 +18,8 @@ package golden_model_pkg;
         parameter int unsigned AXI_DATA_WIDTH = 32,
         parameter int unsigned AXI_ID_WIDTH_M = 8,
         parameter int unsigned AXI_ID_WIDTH_S = 16,
-        parameter int unsigned AXI_USER_WIDTH = 0
+        parameter int unsigned AXI_USER_WIDTH = 0,
+        parameter time ACQ_DELAY = 1ns
     );
 
         localparam int unsigned MEM_OFFSET_BITS = $clog2(MEM_DATA_WIDTH/8);
@@ -224,11 +225,25 @@ package golden_model_pkg;
         );
             if (out_id) begin
                 // Wait for a transaction to be through the memory controller's buffers and return its ID
-                @(posedge axi.clk_i iff ((axi.aw_valid & axi.aw_ready) && (axi.aw_addr == calculate_dut_address(addr))));
+                forever begin
+                    @(posedge axi.clk_i);
+                    #(ACQ_DELAY);
+                    if (axi.aw_valid && axi.aw_ready
+                            && axi.aw_addr == calculate_dut_address(addr)) begin
+                        break;
+                    end
+                end
                 out_id = axi.aw_id;
             end else begin
                 // Wait for the transaction to be through the memory controller's buffers
-                @(posedge axi.clk_i iff ((axi.aw_valid & axi.aw_ready) && (axi.aw_id[AXI_ID_WIDTH_S-1:0] == id) && (axi.aw_addr == calculate_dut_address(addr))));
+                forever begin
+                    @(posedge axi.clk_i);
+                    #(ACQ_DELAY);
+                    if (axi.aw_valid && axi.aw_ready && axi.aw_id[AXI_ID_WIDTH_S-1:0] == id
+                            && axi.aw_addr == calculate_dut_address(addr)) begin
+                        break;
+                    end
+                end
             end
         endtask : wait_write
 
@@ -236,7 +251,13 @@ package golden_model_pkg;
             input logic [AXI_ID_WIDTH_S-1:0] id
         );
             // Wait for the transaction to be confirmed by the memory controller
-            @(posedge axi.clk_i iff (axi.b_valid && (axi.b_id[AXI_ID_WIDTH_S-1:0] == id)));
+            forever begin
+                @(posedge axi.clk_i);
+                #(ACQ_DELAY);
+                if (axi.b_valid && axi.b_id[AXI_ID_WIDTH_S-1:0] == id) begin
+                    break;
+                end
+            end
         endtask : wait_b
 
         task wait_read(
@@ -245,7 +266,14 @@ package golden_model_pkg;
             input logic [AXI_ID_WIDTH_S-1:0] id
         );
             // Wait for the transaction to be through the memory controller's buffers
-            @(posedge axi.clk_i iff ((axi.ar_valid & axi.ar_ready) && (axi.ar_id[AXI_ID_WIDTH_S-1:0] == id) && (axi.ar_addr == calculate_dut_address(addr))));
+            forever begin
+                @(posedge axi.clk_i);
+                #(ACQ_DELAY);
+                if (axi.ar_valid && axi.ar_ready && axi.ar_id[AXI_ID_WIDTH_S-1:0] == id
+                        && axi.ar_addr == calculate_address(addr)) begin
+                    break;
+                end
+            end
         endtask : wait_read
 
     endclass : golden_memory
