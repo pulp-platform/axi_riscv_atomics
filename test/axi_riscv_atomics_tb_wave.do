@@ -90,51 +90,6 @@ add wave -noupdate -group {AXIBUS lrsc} -label r_id /axi_riscv_atomics_tb/i_axi_
 add wave -noupdate -group {AXIBUS lrsc} -label r_user /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/int_axi_r_user
 add wave -noupdate -group {AXIBUS lrsc} -color {Cornflower Blue} -label r_valid /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/int_axi_r_valid
 add wave -noupdate -group {AXIBUS lrsc} -label r_ready /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/int_axi_r_ready
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_id}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_addr}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_len}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_size}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_burst}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_lock}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_cache}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_prot}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_qos}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_region}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_atop}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_user}
-add wave -noupdate -expand -group {AXIBUS amo} -color {Cornflower Blue} {/axi_riscv_atomics_tb/axi_dut[0]/aw_valid}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/aw_ready}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/w_data}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/w_strb}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/w_last}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/w_user}
-add wave -noupdate -expand -group {AXIBUS amo} -color {Cornflower Blue} {/axi_riscv_atomics_tb/axi_dut[0]/w_valid}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/w_ready}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/b_id}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/b_resp}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/b_user}
-add wave -noupdate -expand -group {AXIBUS amo} -color {Cornflower Blue} {/axi_riscv_atomics_tb/axi_dut[0]/b_valid}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/b_ready}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_id}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_addr}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_len}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_size}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_burst}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_lock}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_cache}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_prot}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_qos}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_region}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_user}
-add wave -noupdate -expand -group {AXIBUS amo} -color {Cornflower Blue} {/axi_riscv_atomics_tb/axi_dut[0]/ar_valid}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/ar_ready}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/r_id}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/r_data}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/r_resp}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/r_last}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/r_user}
-add wave -noupdate -expand -group {AXIBUS amo} -color {Cornflower Blue} {/axi_riscv_atomics_tb/axi_dut[0]/r_valid}
-add wave -noupdate -expand -group {AXIBUS amo} {/axi_riscv_atomics_tb/axi_dut[0]/r_ready}
 add wave -noupdate -group {AXIBUS_cl_[0]} {/axi_riscv_atomics_tb/axi_cl[0]/aw_id}
 add wave -noupdate -group {AXIBUS_cl_[0]} {/axi_riscv_atomics_tb/axi_cl[0]/aw_addr}
 add wave -noupdate -group {AXIBUS_cl_[0]} {/axi_riscv_atomics_tb/axi_cl[0]/aw_len}
@@ -270,185 +225,185 @@ add wave -noupdate -group {AXI_cl[7]} {/axi_riscv_atomics_tb/axi_cl[7]/r_last}
 add wave -noupdate -group {AXI_cl[7]} {/axi_riscv_atomics_tb/axi_cl[7]/r_user}
 add wave -noupdate -group {AXI_cl[7]} {/axi_riscv_atomics_tb/axi_cl[7]/r_valid}
 add wave -noupdate -group {AXI_cl[7]} {/axi_riscv_atomics_tb/axi_cl[7]/r_ready}
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/clk_i
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/rst_ni
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_addr_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_prot_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_region_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_atop_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_len_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_size_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_burst_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_lock_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_cache_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_qos_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_id_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_user_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_ready_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_valid_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_addr_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_prot_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_region_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_len_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_size_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_burst_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_lock_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_cache_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_qos_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_id_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_user_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_ready_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_valid_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_data_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_strb_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_user_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_last_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_ready_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_valid_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_data_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_resp_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_last_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_id_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_user_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_ready_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_valid_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_b_resp_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_b_id_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_b_user_o
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_b_ready_i
-add wave -noupdate -expand -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_b_valid_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_addr_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_prot_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_region_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_atop_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_len_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_size_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_burst_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_lock_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_cache_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_qos_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_id_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_user_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_ready_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_valid_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_addr_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_prot_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_region_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_len_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_size_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_burst_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_lock_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_cache_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_qos_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_id_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_user_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_ready_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_valid_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_data_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_strb_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_user_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_last_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_ready_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_valid_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_data_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_resp_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_last_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_id_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_user_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_ready_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_valid_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_b_resp_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_b_id_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_b_user_i
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_b_ready_o
-add wave -noupdate -expand -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_b_valid_i
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_state_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_state_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_state_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_state_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/b_state_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/b_state_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/ar_state_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/ar_state_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_state_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_state_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/adapter_ready
-add wave -noupdate -expand -group {AMO Adapter} -color Orange /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/atop_valid_d
-add wave -noupdate -expand -group {AMO Adapter} -color Orange /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/atop_valid_q
-add wave -noupdate -expand -group {AMO Adapter} -color Yellow /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/force_wf_d
-add wave -noupdate -expand -group {AMO Adapter} -color Yellow /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/force_wf_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/start_wf_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/start_wf_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/b_resp_valid
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_free
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_free
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/b_free
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/ar_free
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_free
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_trans_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_trans_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_req_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_req_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_inj_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_inj_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/addr_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/addr_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/size_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/size_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/strb_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/strb_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/id_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/id_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/cache_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/cache_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/prot_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/prot_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/qos_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/qos_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/region_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/region_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_user_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_user_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_user_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_user_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_user_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_user_q
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_resp_d
-add wave -noupdate -expand -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_resp_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/atop_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/atop_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_data_d
-add wave -noupdate -expand -group {AMO Adapter} -color {Cornflower Blue} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_data_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_data_d
-add wave -noupdate -expand -group {AMO Adapter} -color {Cornflower Blue} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_data_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/result_d
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/result_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_d_valid_d
-add wave -noupdate -expand -group {AMO Adapter} -color {Cornflower Blue} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_d_valid_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_d_valid_d
-add wave -noupdate -expand -group {AMO Adapter} -color {Cornflower Blue} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_d_valid_q
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/alu_operand_a
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/alu_operand_b
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/alu_result
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/alu_result_ext
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/transaction_collision
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/op_a
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/op_b
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/op_a_sign_ext
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/op_b_sign_ext
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/res
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/strb_ext
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/sign_a
-add wave -noupdate -expand -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/sign_b
-add wave -noupdate -expand -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/amo_op_i
-add wave -noupdate -expand -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/amo_operand_a_i
-add wave -noupdate -expand -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/amo_operand_b_i
-add wave -noupdate -expand -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/amo_result_o
-add wave -noupdate -expand -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/adder_sum
-add wave -noupdate -expand -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/adder_operand_a
-add wave -noupdate -expand -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/adder_operand_b
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/clk_i
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/rst_ni
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_addr_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_prot_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_region_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_atop_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_len_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_size_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_burst_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_lock_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_cache_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_qos_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_id_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_user_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_ready_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_aw_valid_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_addr_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_prot_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_region_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_len_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_size_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_burst_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_lock_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_cache_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_qos_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_id_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_user_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_ready_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_ar_valid_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_data_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_strb_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_user_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_last_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_ready_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_w_valid_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_data_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_resp_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_last_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_id_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_user_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_ready_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_r_valid_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_b_resp_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_b_id_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_b_user_o
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_b_ready_i
+add wave -noupdate -group {AMO Adapter} -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/slv_b_valid_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_addr_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_prot_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_region_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_atop_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_len_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_size_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_burst_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_lock_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_cache_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_qos_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_id_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_user_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_ready_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_aw_valid_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_addr_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_prot_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_region_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_len_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_size_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_burst_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_lock_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_cache_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_qos_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_id_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_user_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_ready_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_ar_valid_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_data_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_strb_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_user_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_last_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_ready_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_w_valid_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_data_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_resp_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_last_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_id_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_user_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_ready_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_r_valid_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_b_resp_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_b_id_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_b_user_i
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_b_ready_o
+add wave -noupdate -group {AMO Adapter} -group mst /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/mst_b_valid_i
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_state_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_state_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_state_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_state_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/b_state_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/b_state_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/ar_state_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/ar_state_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_state_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_state_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/adapter_ready
+add wave -noupdate -group {AMO Adapter} -color Orange /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/atop_valid_d
+add wave -noupdate -group {AMO Adapter} -color Orange /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/atop_valid_q
+add wave -noupdate -group {AMO Adapter} -color Yellow /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/force_wf_d
+add wave -noupdate -group {AMO Adapter} -color Yellow /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/force_wf_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/start_wf_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/start_wf_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/b_resp_valid
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_free
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_free
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/b_free
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/ar_free
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_free
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_trans_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_trans_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_req_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_req_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_inj_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_cnt_inj_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/addr_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/addr_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/size_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/size_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/strb_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/strb_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/id_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/id_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/cache_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/cache_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/prot_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/prot_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/qos_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/qos_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/region_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/region_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_user_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/aw_user_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_user_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_user_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_user_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_user_q
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_resp_d
+add wave -noupdate -group {AMO Adapter} -expand -group Transaction /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_resp_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/atop_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/atop_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_data_d
+add wave -noupdate -group {AMO Adapter} -color {Cornflower Blue} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_data_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_data_d
+add wave -noupdate -group {AMO Adapter} -color {Cornflower Blue} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_data_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/result_d
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/result_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_d_valid_d
+add wave -noupdate -group {AMO Adapter} -color {Cornflower Blue} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/w_d_valid_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_d_valid_d
+add wave -noupdate -group {AMO Adapter} -color {Cornflower Blue} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/r_d_valid_q
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/alu_operand_a
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/alu_operand_b
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/alu_result
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/alu_result_ext
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/transaction_collision
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/op_a
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/op_b
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/op_a_sign_ext
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/op_b_sign_ext
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/res
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/strb_ext
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/sign_a
+add wave -noupdate -group {AMO Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/sign_b
+add wave -noupdate -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/amo_op_i
+add wave -noupdate -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/amo_operand_a_i
+add wave -noupdate -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/amo_operand_b_i
+add wave -noupdate -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/amo_result_o
+add wave -noupdate -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/adder_sum
+add wave -noupdate -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/adder_operand_a
+add wave -noupdate -group {AMO Adapter} -expand -group ALU /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_amos/i_amo_alu/adder_operand_b
 add wave -noupdate -group {LRSC Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/clk_i
 add wave -noupdate -group {LRSC Adapter} /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/rst_ni
 add wave -noupdate -group {LRSC Adapter} -expand -group slv /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/slv_aw_addr_i
@@ -672,113 +627,28 @@ add wave -noupdate -group Write_in_flight_Q -expand /axi_riscv_atomics_tb/i_axi_
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/linked_data_d
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/linked_data_q
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/full
-add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/no_id_match
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/head_tail_free
-add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/idx_matches_id
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/exists_match
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/linked_data_free
-add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/match_id
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/head_tail_free_idx
-add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/match_idx
 add wave -noupdate -group Write_in_flight_Q /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_write_in_flight_queue/linked_data_free_idx
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/clk
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/rst_n
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/test_en_i
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/start_addr_i
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/end_addr_i
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/valid_rule_i
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_id
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_addr
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_len
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_size
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_burst
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_lock
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_cache
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_prot
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_region
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_atop
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_user
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_qos
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_valid
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_aw_ready
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_id
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_addr
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_len
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_size
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_burst
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_lock
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_cache
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_prot
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_region
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_user
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_qos
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_valid
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_ar_ready
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_w_data
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_w_strb
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_w_last
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_w_user
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_w_valid
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_w_ready
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_b_id
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_b_resp
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_b_valid
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_b_user
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_b_ready
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_r_id
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_r_data
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_r_resp
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_r_last
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_r_user
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_r_valid
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_master_r_ready
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_id
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_addr
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_len
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_size
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_burst
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_lock
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_cache
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_prot
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_region
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_atop
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_user
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_qos
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_valid
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_aw_ready
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_id
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_addr
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_len
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_size
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_burst
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_lock
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_cache
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_prot
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_region
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_user
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_qos
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_valid
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_ar_ready
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_w_data
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_w_strb
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_w_last
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_w_user
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_w_valid
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_w_ready
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_b_id
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_b_resp
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_b_valid
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_b_user
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_b_ready
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_r_id
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_r_data
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_r_resp
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_r_last
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_r_user
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_r_valid
-add wave -noupdate -group AXI_Node /axi_riscv_atomics_tb/i_axi_node/s_slave_r_ready
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/clk_i
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/w_valid
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/w_addr
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/w_data
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/w_id
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/w_user
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/w_beat_count
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/w_last
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/r_valid
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/r_addr
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/r_data
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/r_id
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/r_user
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/r_beat_count
+add wave -noupdate -group {Memory Monitor} /axi_riscv_atomics_tb/mem_monitor_dv/r_last
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 5} {9091356 ps} 0} {{Cursor 2} {4109370 ps} 1} {{Cursor 3} {138888000 ps} 1}
+WaveRestoreCursors {{Cursor 5} {0 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 192
 configure wave -valuecolwidth 193
@@ -794,4 +664,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {20387850 ps}
+WaveRestoreZoom {0 ps} {1886401650 ps}

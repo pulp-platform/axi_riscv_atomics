@@ -9,6 +9,90 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+/// A monitor interface for `axi_sim_mem`'s monitor ports.
+interface MONITOR_BUS #(
+    parameter int unsigned ADDR_WIDTH = 0,
+    parameter int unsigned DATA_WIDTH = 0,
+    parameter int unsigned ID_WIDTH   = 0,
+    parameter int unsigned USER_WIDTH = 0
+);
+
+    typedef logic [ID_WIDTH-1:0]   id_t;
+    typedef logic [ADDR_WIDTH-1:0] addr_t;
+    typedef logic [DATA_WIDTH-1:0] data_t;
+    typedef logic [USER_WIDTH-1:0] user_t;
+
+    logic          w_valid;
+    addr_t         w_addr;
+    data_t         w_data;
+    id_t           w_id;
+    user_t         w_user;
+    axi_pkg::len_t w_beat_count;
+    logic          w_last;
+
+    logic          r_valid;
+    addr_t         r_addr;
+    data_t         r_data;
+    id_t           r_id;
+    user_t         r_user;
+    axi_pkg::len_t r_beat_count;
+    logic          r_last;
+
+
+    modport Master (
+        output w_valid, w_addr, w_data, w_id, w_user, w_beat_count, w_last, r_valid,
+        output r_addr, r_data, r_id, r_user, r_beat_count, r_last
+    );
+
+    modport Slave (
+        input w_valid, w_addr, w_data, w_id, w_user, w_beat_count, w_last, r_valid,
+        input r_addr, r_data, r_id, r_user, r_beat_count, r_last
+    );
+endinterface
+
+/// A clocked monitor interface for `axi_sim_mem`'s monitor ports.
+interface MONITOR_BUS_DV #(
+    parameter int unsigned ADDR_WIDTH = 0,
+    parameter int unsigned DATA_WIDTH = 0,
+    parameter int unsigned ID_WIDTH   = 0,
+    parameter int unsigned USER_WIDTH = 0
+)(
+    input logic clk_i
+);
+
+    typedef logic [ID_WIDTH-1:0]   id_t;
+    typedef logic [ADDR_WIDTH-1:0] addr_t;
+    typedef logic [DATA_WIDTH-1:0] data_t;
+    typedef logic [USER_WIDTH-1:0] user_t;
+
+    logic          w_valid;
+    addr_t         w_addr;
+    data_t         w_data;
+    id_t           w_id;
+    user_t         w_user;
+    axi_pkg::len_t w_beat_count;
+    logic          w_last;
+
+    logic          r_valid;
+    addr_t         r_addr;
+    data_t         r_data;
+    id_t           r_id;
+    user_t         r_user;
+    axi_pkg::len_t r_beat_count;
+    logic          r_last;
+
+
+    modport Master (
+        output w_valid, w_addr, w_data, w_id, w_user, w_beat_count, w_last, r_valid,
+        output r_addr, r_data, r_id, r_user, r_beat_count, r_last
+    );
+
+    modport Slave (
+        input w_valid, w_addr, w_data, w_id, w_user, w_beat_count, w_last, r_valid,
+        input r_addr, r_data, r_id, r_user, r_beat_count, r_last
+    );
+endinterface
+
 package golden_model_pkg;
 
     class golden_memory #(
@@ -32,21 +116,21 @@ package golden_model_pkg;
         // AXI Bus to actual memory (after memory AXI-buffer)
         // This bus is only read to get the same linearization
         // in both the actual memory and the golden model.
-        virtual AXI_BUS_DV #(
-          .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-          .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
-          .AXI_ID_WIDTH  (AXI_ID_WIDTH_S),
-          .AXI_USER_WIDTH(AXI_USER_WIDTH)
-        ) axi;
+        virtual MONITOR_BUS_DV #(
+          .ADDR_WIDTH(AXI_ADDR_WIDTH),
+          .DATA_WIDTH(AXI_DATA_WIDTH),
+          .ID_WIDTH  (AXI_ID_WIDTH_S),
+          .USER_WIDTH(AXI_USER_WIDTH)
+        ) monitor;
 
-        function new(virtual AXI_BUS_DV #(
-                .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-                .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
-                .AXI_ID_WIDTH  (AXI_ID_WIDTH_S),
-                .AXI_USER_WIDTH(AXI_USER_WIDTH)
-            ) axi
+        function new(virtual MONITOR_BUS_DV #(
+                .ADDR_WIDTH(AXI_ADDR_WIDTH),
+                .DATA_WIDTH(AXI_DATA_WIDTH),
+                .ID_WIDTH  (AXI_ID_WIDTH_S),
+                .USER_WIDTH(AXI_USER_WIDTH)
+            ) monitor
         );
-            this.axi = axi;
+            this.monitor = monitor;
             void'(randomize(memory));
         endfunction : new
 
@@ -226,21 +310,20 @@ package golden_model_pkg;
             if (out_id) begin
                 // Wait for a transaction to be through the memory controller's buffers and return its ID
                 forever begin
-                    @(posedge axi.clk_i);
+                    @(posedge monitor.clk_i);
                     #(ACQ_DELAY);
-                    if (axi.aw_valid && axi.aw_ready
-                            && axi.aw_addr == calculate_dut_address(addr)) begin
+                    if (monitor.w_valid && monitor.w_addr == addr) begin
                         break;
                     end
                 end
-                out_id = axi.aw_id;
+                out_id = monitor.w_id;
             end else begin
                 // Wait for the transaction to be through the memory controller's buffers
                 forever begin
-                    @(posedge axi.clk_i);
+                    @(posedge monitor.clk_i);
                     #(ACQ_DELAY);
-                    if (axi.aw_valid && axi.aw_ready && axi.aw_id[AXI_ID_WIDTH_S-1:0] == id
-                            && axi.aw_addr == calculate_dut_address(addr)) begin
+                    if (monitor.w_valid && monitor.w_id[AXI_ID_WIDTH_S-1:0] == id
+                            && monitor.w_addr == addr) begin
                         break;
                     end
                 end
@@ -252,9 +335,9 @@ package golden_model_pkg;
         );
             // Wait for the transaction to be confirmed by the memory controller
             forever begin
-                @(posedge axi.clk_i);
+                @(posedge monitor.clk_i);
                 #(ACQ_DELAY);
-                if (axi.b_valid && axi.b_id[AXI_ID_WIDTH_S-1:0] == id) begin
+                if (monitor.w_valid && monitor.w_id[AXI_ID_WIDTH_S-1:0] == id) begin
                     break;
                 end
             end
@@ -267,10 +350,10 @@ package golden_model_pkg;
         );
             // Wait for the transaction to be through the memory controller's buffers
             forever begin
-                @(posedge axi.clk_i);
+                @(posedge monitor.clk_i);
                 #(ACQ_DELAY);
-                if (axi.ar_valid && axi.ar_ready && axi.ar_id[AXI_ID_WIDTH_S-1:0] == id
-                        && axi.ar_addr == calculate_address(addr)) begin
+                if (monitor.r_valid && monitor.r_id[AXI_ID_WIDTH_S-1:0] == id
+                        && monitor.r_addr == addr) begin
                     break;
                 end
             end

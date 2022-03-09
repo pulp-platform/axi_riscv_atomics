@@ -68,14 +68,6 @@ module automatic axi_riscv_atomics_tb;
         .AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH )
     ) axi_mem();
-    AXI_BUS_DV #(
-        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
-        .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
-        .AXI_USER_WIDTH ( AXI_USER_WIDTH )
-    ) axi_mem_dv(clk);
-
-    `AXI_ASSIGN_MONITOR(axi_mem_dv, axi_mem)
 
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
@@ -99,6 +91,16 @@ module automatic axi_riscv_atomics_tb;
         .AXI_USER_WIDTH ( AXI_USER_WIDTH )
     ) axi_cl_dv[NUM_MASTERS](
         .clk_i          ( clk            )
+    );
+
+    // Monitor bus for golden model
+    MONITOR_BUS_DV #(
+        .ADDR_WIDTH ( AXI_ADDR_WIDTH ),
+        .DATA_WIDTH ( AXI_DATA_WIDTH ),
+        .ID_WIDTH   ( AXI_ID_WIDTH_S ),
+        .USER_WIDTH ( AXI_USER_WIDTH )
+    ) mem_monitor_dv (
+        .clk_i  ( clk )
     );
 
     generate
@@ -139,9 +141,23 @@ module automatic axi_riscv_atomics_tb;
         .APPL_DELAY     ( tCK * 1 / 4    ),
         .ACQ_DELAY      ( tCK * 3 / 4    )
     ) i_axi_sim_mem (
-        .clk_i      ( clk     ),
-        .rst_ni     ( rst_n   ),
-        .axi_slv    ( axi_mem )
+        .clk_i              ( clk                         ),
+        .rst_ni             ( rst_n                       ),
+        .axi_slv            ( axi_mem                     ),
+        .mon_w_valid_o      ( mem_monitor_dv.w_valid      ),
+        .mon_w_addr_o       ( mem_monitor_dv.w_addr       ),
+        .mon_w_data_o       ( mem_monitor_dv.w_data       ),
+        .mon_w_id_o         ( mem_monitor_dv.w_id         ),
+        .mon_w_user_o       ( mem_monitor_dv.w_user       ),
+        .mon_w_beat_count_o ( mem_monitor_dv.w_beat_count ),
+        .mon_w_last_o       ( mem_monitor_dv.w_last       ),
+        .mon_r_valid_o      ( mem_monitor_dv.r_valid      ),
+        .mon_r_addr_o       ( mem_monitor_dv.r_addr       ),
+        .mon_r_data_o       ( mem_monitor_dv.r_data       ),
+        .mon_r_id_o         ( mem_monitor_dv.r_id         ),
+        .mon_r_user_o       ( mem_monitor_dv.r_user       ),
+        .mon_r_beat_count_o ( mem_monitor_dv.r_beat_count ),
+        .mon_r_last_o       ( mem_monitor_dv.r_last       )
     );
 
     // axi_riscv_amos_wrap #(
@@ -196,7 +212,7 @@ module automatic axi_riscv_atomics_tb;
         .AXI_ID_WIDTH_S( AXI_ID_WIDTH_S ),
         .AXI_USER_WIDTH( AXI_USER_WIDTH ),
         .ACQ_DELAY     ( tCK * 3 / 4    )
-    ) gold_memory = new(axi_mem_dv);
+    ) gold_memory = new(mem_monitor_dv);
 
     /*====================================================================
     =                                Main                                =
