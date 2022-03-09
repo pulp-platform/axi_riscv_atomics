@@ -271,7 +271,6 @@ package golden_model_pkg;
                     b_resp = axi_pkg::RESP_OKAY;
                 end else begin
                     // Success
-                    wait_b(id);
                     set_memory(address, w_data, size);
                     b_resp = axi_pkg::RESP_EXOKAY;
                 end
