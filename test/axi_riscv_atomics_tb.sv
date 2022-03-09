@@ -225,6 +225,7 @@ module automatic axi_riscv_atomics_tb;
         // Wait for reset
         @(posedge clk);
         wait (rst_n);
+        @(posedge clk);
         // Run tests!
         test_all_amos();
         test_same_address();
