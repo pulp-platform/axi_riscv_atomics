@@ -197,20 +197,16 @@ module automatic axi_riscv_atomics_tb;
     endgenerate
 
     // Golden model
-    // The golden model memory's data width is the system data width
-    // Therefore, the golden memory address width must be larger than the
-    // actual memory's address width if the data width does not match.
-    // This ensures that both memories can store the same amount of bits.
-    localparam int unsigned GOLD_MEM_WIDTH = MEM_ADDR_WIDTH + $clog2(AXI_DATA_WIDTH/8) ;// + (AXI_DATA_WIDTH/SYS_DATA_WIDTH) - 1;
-
+    // The `axi_sim_mem` can hold the full addressable range of memory, so let's do the same
     golden_model_pkg::golden_memory #(
-        .MEM_ADDR_WIDTH( GOLD_MEM_WIDTH ),
+        .MEM_ADDR_WIDTH( AXI_ADDR_WIDTH ),
         .MEM_DATA_WIDTH( SYS_DATA_WIDTH ),
         .AXI_ADDR_WIDTH( AXI_ADDR_WIDTH ),
         .AXI_DATA_WIDTH( AXI_DATA_WIDTH ),
         .AXI_ID_WIDTH_M( AXI_ID_WIDTH_M ),
         .AXI_ID_WIDTH_S( AXI_ID_WIDTH_S ),
         .AXI_USER_WIDTH( AXI_USER_WIDTH ),
+        .APPL_DELAY    ( tCK * 1 / 4    ),
         .ACQ_DELAY     ( tCK * 3 / 4    )
     ) gold_memory = new(mem_monitor_dv);
 

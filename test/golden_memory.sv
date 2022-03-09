@@ -103,15 +103,17 @@ package golden_model_pkg;
         parameter int unsigned AXI_ID_WIDTH_M = 8,
         parameter int unsigned AXI_ID_WIDTH_S = 16,
         parameter int unsigned AXI_USER_WIDTH = 0,
+        parameter time APPL_DELAY = 1ns,
         parameter time ACQ_DELAY = 1ns
     );
 
         localparam int unsigned MEM_OFFSET_BITS = $clog2(MEM_DATA_WIDTH/8);
         localparam int unsigned NUM_MAST_WIDTH  = AXI_ID_WIDTH_S-AXI_ID_WIDTH_M;
 
+        typedef logic [MEM_ADDR_WIDTH-1:0] mem_addr_t;
+
         // Static variable for memory
-        // static logic [(2**MEM_ADDR_WIDTH)*(AXI_DATA_WIDTH/8)-1:0][7:0]  memory;
-        static logic [(2**MEM_ADDR_WIDTH)-1:0][7:0] memory;
+        static logic [7:0] memory [mem_addr_t];
 
         // AXI Bus to actual memory (after memory AXI-buffer)
         // This bus is only read to get the same linearization
@@ -167,12 +169,13 @@ package golden_model_pkg;
             end
         endfunction : crop_data
 
-        function void set_memory(logic [MEM_ADDR_WIDTH-1:0] addr, logic [MEM_DATA_WIDTH-1:0] data, logic [2:0] size);
+        task set_memory(logic [MEM_ADDR_WIDTH-1:0] addr, logic [MEM_DATA_WIDTH-1:0] data, logic [2:0] size);
             int unsigned num_bytes = 2**size;
+            #(APPL_DELAY)
             for (int i = 0; i < num_bytes; i++) begin
-                memory[addr+i] <= #(ACQ_DELAY) data[i*8 +: 8];
+                memory[addr+i] = data[i*8 +: 8];
             end
-        endfunction : set_memory
+        endtask : set_memory
 
         function logic [MEM_DATA_WIDTH-1:0] get_memory(logic [MEM_ADDR_WIDTH-1:0] addr, logic [2:0] size);
             int unsigned num_bytes = 2**size;
