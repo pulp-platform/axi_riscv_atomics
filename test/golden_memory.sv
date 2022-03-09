@@ -170,7 +170,7 @@ package golden_model_pkg;
         function void set_memory(logic [MEM_ADDR_WIDTH-1:0] addr, logic [MEM_DATA_WIDTH-1:0] data, logic [2:0] size);
             int unsigned num_bytes = 2**size;
             for (int i = 0; i < num_bytes; i++) begin
-                memory[addr+i] = data[i*8 +: 8];
+                memory[addr+i] <= #(ACQ_DELAY) data[i*8 +: 8];
             end
         endfunction : set_memory
 
