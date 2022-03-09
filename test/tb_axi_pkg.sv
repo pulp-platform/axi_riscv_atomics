@@ -74,12 +74,13 @@ package tb_axi_pkg;
             logic [DW/8-1:0] strb;
             map_sys2axi_data(address, data, size, axi_data, strb);
             // Send AW and W request
-            ax_beat.ax_id   = id;
-            ax_beat.ax_addr = address;
-            ax_beat.ax_size = size;
-            w_beat.w_data   = axi_data;
-            w_beat.w_strb   = strb;
-            w_beat.w_last   = 1'b1;
+            ax_beat.ax_id    = id;
+            ax_beat.ax_addr  = address;
+            ax_beat.ax_size  = size;
+            ax_beat.ax_burst = axi_pkg::BURST_INCR;
+            w_beat.w_data    = axi_data;
+            w_beat.w_strb    = strb;
+            w_beat.w_last    = 1'b1;
             if (atop == 6'b000111) begin
                 // LRSC pair
                 axi_read(address, result, size, id, 1'b1);
@@ -141,10 +142,11 @@ package tb_axi_pkg;
             automatic ax_beat_t ax_beat = new;
             automatic r_beat_t  r_beat  = new;
             // Send AW and W request
-            ax_beat.ax_id   = id;
-            ax_beat.ax_addr = address;
-            ax_beat.ax_size = size;
-            ax_beat.ax_lock = lock;
+            ax_beat.ax_id    = id;
+            ax_beat.ax_addr  = address;
+            ax_beat.ax_size  = size;
+            ax_beat.ax_lock  = lock;
+            ax_beat.ax_burst = axi_pkg::BURST_INCR;
             fork
                 // AR
                 begin
