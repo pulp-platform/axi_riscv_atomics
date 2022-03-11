@@ -24,6 +24,10 @@ module axi_riscv_lrsc_wrap #(
     parameter int unsigned AXI_DATA_WIDTH = 0,
     parameter int unsigned AXI_ID_WIDTH = 0,
     parameter int unsigned AXI_USER_WIDTH = 0,
+    parameter int unsigned AXI_MAX_READ_TXNS = 0,  // Maximum number of in-flight read transactions
+    parameter int unsigned AXI_MAX_WRITE_TXNS = 0, // Maximum number of in-flight write transactions
+    /// Enable debug prints (not synthesizable).
+    parameter bit DEBUG = 1'b0,
     /// Derived Parameters (do NOT change manually!)
     localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8
 ) (
@@ -34,12 +38,15 @@ module axi_riscv_lrsc_wrap #(
 );
 
     axi_riscv_lrsc #(
-        .ADDR_BEGIN     (ADDR_BEGIN),
-        .ADDR_END       (ADDR_END),
-        .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH),
-        .AXI_DATA_WIDTH (AXI_DATA_WIDTH),
-        .AXI_ID_WIDTH   (AXI_ID_WIDTH),
-        .AXI_USER_WIDTH (AXI_USER_WIDTH)
+        .ADDR_BEGIN             (ADDR_BEGIN),
+        .ADDR_END               (ADDR_END),
+        .AXI_ADDR_WIDTH         (AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH         (AXI_DATA_WIDTH),
+        .AXI_ID_WIDTH           (AXI_ID_WIDTH),
+        .AXI_USER_WIDTH         (AXI_USER_WIDTH),
+        .AXI_MAX_READ_TXNS      (AXI_MAX_READ_TXNS),
+        .AXI_MAX_WRITE_TXNS     (AXI_MAX_WRITE_TXNS),
+        .DEBUG                  (DEBUG)
     ) i_lrsc (
         .clk_i           ( clk_i         ),
         .rst_ni          ( rst_ni        ),
