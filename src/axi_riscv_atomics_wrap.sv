@@ -25,6 +25,12 @@ module axi_riscv_atomics_wrap #(
     parameter int unsigned AXI_MAX_READ_TXNS = 0,
     // Maximum number of AXI write bursts outstanding at the same time
     parameter int unsigned AXI_MAX_WRITE_TXNS = 0,
+    // Use the AXI User signal instead of the AXI ID to track reservations
+    parameter bit AXI_USER_AS_ID = 1'b0,
+    // MSB of the ID in the user signal
+    parameter int unsigned AXI_USER_ID_MSB = 0,
+    // LSB of the ID in the user signal
+    parameter int unsigned AXI_USER_ID_LSB = 0,
     // Word width of the widest RISC-V processor that can issue requests to this module.
     // 32 for RV32; 64 for RV64, where both 32-bit (.W suffix) and 64-bit (.D suffix) AMOs are
     // supported if `aw_strb` is set correctly.
@@ -45,6 +51,9 @@ module axi_riscv_atomics_wrap #(
         .AXI_USER_WIDTH     (AXI_USER_WIDTH),
         .AXI_MAX_READ_TXNS  (AXI_MAX_READ_TXNS),
         .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS),
+        .AXI_USER_AS_ID     (AXI_USER_AS_ID),
+        .AXI_USER_ID_MSB    (AXI_USER_ID_MSB),
+        .AXI_USER_ID_LSB    (AXI_USER_ID_LSB),
         .RISCV_WORD_WIDTH   (RISCV_WORD_WIDTH)
     ) i_atomics (
         .clk_i           ( clk_i         ),

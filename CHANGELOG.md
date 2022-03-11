@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 ## Unreleased
 
 ### Added
+- `axi_riscv_atomics`: Add capability to use the AXI User signal as reservation ID.
 
 ### Changed
 
