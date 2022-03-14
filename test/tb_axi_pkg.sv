@@ -117,8 +117,7 @@ package tb_axi_pkg;
                 end
                 // R response if atop
                 begin
-                    if ((atop != 0) && (atop[5:3] != {axi_pkg::ATOP_ATOMICSTORE, axi_pkg::ATOP_LITTLE_END}) &&
-                        (atop != 6'b000111)) begin // Atomic operations with read response
+                    if (atop[axi_pkg::ATOP_R_RESP]) begin // Atomic operations with read response
                         rand_delay(0,RAND_DELAY);
                         recv_r(r_beat);
                         result = r_beat.r_data;
