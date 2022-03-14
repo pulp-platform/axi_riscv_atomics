@@ -14,6 +14,8 @@ import axi_test::*;
 
 package tb_axi_pkg;
 
+    axi_pkg::atop_t ATOP_LRSC = 6'b000111;
+
     class axi_access #(
         parameter int  AW = 32  , // AXI address width
         parameter int  DW = 32  , // AXI data width
@@ -81,7 +83,7 @@ package tb_axi_pkg;
             w_beat.w_data    = axi_data;
             w_beat.w_strb    = strb;
             w_beat.w_last    = 1'b1;
-            if (atop == 6'b000111) begin
+            if (atop == ATOP_LRSC) begin
                 // LRSC pair
                 axi_read(address, result, size, id, 1'b1);
                 rand_delay(0,10*RAND_DELAY);

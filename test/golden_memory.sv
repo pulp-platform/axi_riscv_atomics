@@ -209,7 +209,7 @@ package golden_model_pkg;
 
             b_resp = axi_pkg::RESP_OKAY;
 
-            if (atop == 6'b000111) begin
+            if (atop == tb_axi_pkg::ATOP_LRSC) begin
                 // LR/SC pair
                 // Wait for LR
                 read(addr, r_data, size, m_id, master);
