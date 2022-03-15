@@ -103,15 +103,14 @@ package golden_model_pkg;
         parameter int unsigned AXI_ID_WIDTH_M = 8,
         parameter int unsigned AXI_ID_WIDTH_S = 16,
         parameter int unsigned AXI_USER_WIDTH = 0,
+        parameter int unsigned USER_AS_ID = 0,
         parameter time APPL_DELAY = 1ns,
         parameter time ACQ_DELAY = 1ns
     );
 
-        localparam int unsigned USER_AS_ID = 1;
-
         localparam int unsigned MEM_OFFSET_BITS = $clog2(MEM_DATA_WIDTH/8);
         localparam int unsigned NUM_MAST_WIDTH  = AXI_ID_WIDTH_S-AXI_ID_WIDTH_M;
-        localparam int unsigned RES_ID_WIDTH    = AXI_USER_WIDTH; // TODO: Or AXI_ID_WIDTH_S
+        localparam int unsigned RES_ID_WIDTH    = USER_AS_ID ? AXI_USER_WIDTH : AXI_ID_WIDTH_S;
 
         typedef logic [MEM_ADDR_WIDTH-1:0] mem_addr_t;
 
@@ -150,9 +149,10 @@ package golden_model_pkg;
         endfunction : calculate_dut_address
 
         function automatic logic [AXI_ID_WIDTH_S-1:0] slave_id(logic [AXI_ID_WIDTH_M-1:0] master_id, logic [NUM_MAST_WIDTH-1:0] master_channel);
-            // if (AXI_ID_WIDTH_S > AXI_ID_WIDTH_M) begin
-            //     slave_id[AXI_ID_WIDTH_S-1:AXI_ID_WIDTH_M] = ~master_channel;
-            // end
+            slave_id = '0;
+            if (AXI_ID_WIDTH_S > AXI_ID_WIDTH_M) begin
+                slave_id |= (~master_channel) << AXI_ID_WIDTH_M;
+            end
             slave_id[AXI_ID_WIDTH_M-1:0] = master_id;
         endfunction : slave_id
 

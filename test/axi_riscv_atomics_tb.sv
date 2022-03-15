@@ -17,12 +17,13 @@ module automatic axi_riscv_atomics_tb;
     parameter NUM_MASTERS    = 32;
     parameter OFFSET         = 16;
     parameter MAX_TIMEOUT    = 1000; // Cycles
+    parameter USER_AS_ID     = `ifdef DEF_USER_AS_ID `DEF_USER_AS_ID `else 0 `endif; // Use the aw_user signal as the reservation ID instead of the aw_id
 
     parameter AXI_ADDR_WIDTH = 64;
     parameter AXI_DATA_WIDTH = 64;
     parameter AXI_ID_WIDTH_M = 8;
     parameter AXI_ID_WIDTH_S = AXI_ID_WIDTH_M + $clog2(NUM_MASTERS);
-    parameter AXI_ID_WIDTH_N = AXI_ID_WIDTH_M;
+    parameter AXI_ID_WIDTH_N = USER_AS_ID ? AXI_ID_WIDTH_M : AXI_ID_WIDTH_S;
     parameter AXI_USER_WIDTH = $clog2(NUM_MASTERS);
 
     parameter SYS_DATA_WIDTH = 64;
@@ -166,7 +167,7 @@ module automatic axi_riscv_atomics_tb;
         .AXI_USER_WIDTH     ( AXI_USER_WIDTH   ),
         .AXI_MAX_READ_TXNS  ( 31               ),
         .AXI_MAX_WRITE_TXNS ( 31               ),
-        .AXI_USER_AS_ID     ( 1                ),
+        .AXI_USER_AS_ID     ( USER_AS_ID       ),
         .AXI_USER_ID_MSB    ( AXI_USER_WIDTH-1 ),
         .AXI_USER_ID_LSB    ( 0                ),
         .RISCV_WORD_WIDTH   ( SYS_DATA_WIDTH   )
@@ -235,6 +236,7 @@ module automatic axi_riscv_atomics_tb;
         .AXI_ID_WIDTH_M( AXI_ID_WIDTH_M ),
         .AXI_ID_WIDTH_S( AXI_ID_WIDTH_N ),
         .AXI_USER_WIDTH( AXI_USER_WIDTH ),
+        .USER_AS_ID    ( USER_AS_ID     ),
         .APPL_DELAY    ( tCK * 1 / 4    ),
         .ACQ_DELAY     ( tCK * 3 / 4    )
     ) gold_memory = new(mem_monitor_dv);
@@ -378,7 +380,7 @@ module automatic axi_riscv_atomics_tb;
                         // Make transaction valid
                         create_consistent_transaction(address, size, atop);
                         // Execute a write with data init, a AMO with data_amo and read result
-                        write_amo_read_cycle(m, address, data_init, data_amo, size, 0, m, atop);
+                        write_amo_read_cycle(m, address, data_init, data_amo, size, id, m, atop);
                         // Wait a random amount of cycles
                         repeat ($urandom_range(100,MAX_TIMEOUT/2)) @(posedge clk);
                     end
