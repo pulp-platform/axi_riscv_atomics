@@ -1022,6 +1022,10 @@ module axi_riscv_lrsc #(
             else $fatal(1, "AXI_MAX_READ_TXNS must be greater than 0!");
         assert (AXI_MAX_WRITE_TXNS > 0)
             else $fatal(1, "AXI_MAX_WRITE_TXNS must be greater than 0!");
+        assert (!AXI_USER_AS_ID || (AXI_USER_ID_MSB >= AXI_USER_ID_LSB))
+            else $fatal(1, "AXI_USER_ID_MSB must be greater equal to AXI_USER_ID_LSB!");
+        assert (!AXI_USER_AS_ID || (AXI_USER_WIDTH > AXI_USER_ID_MSB))
+            else $fatal(1, "AXI_USER_WIDTH must be greater than AXI_USER_ID_MSB!");
     end
 `endif
 // pragma translate_on
