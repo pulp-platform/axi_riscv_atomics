@@ -209,7 +209,22 @@ package golden_model_pkg;
 
             b_resp = axi_pkg::RESP_OKAY;
 
-            if (atop == 0) begin
+            if (atop == 6'b000111) begin
+                // LR/SC pair
+                // Wait for LR
+                read(addr, r_data, size, m_id, master);
+
+                // Check reservation
+                wait_write(addr, size, id, trans_id);
+                if (trans_id != id) begin
+                    // SC failed
+                    b_resp = axi_pkg::RESP_OKAY;
+                end else begin
+                    // Success
+                    set_memory(address, w_data, size);
+                    b_resp = axi_pkg::RESP_EXOKAY;
+                end
+            end else if (atop[5:4] == axi_pkg::ATOP_NONE) begin
                 // Wait for the write
                 wait_b(id);
                 set_memory(address, w_data, size);
@@ -262,21 +277,6 @@ package golden_model_pkg;
 
                 set_memory(address, w_data, size);
 
-            end else if (atop == 6'b000111) begin
-                // LR/SC pair
-                // Wait for LR
-                read(addr, r_data, size, m_id, master);
-
-                // Check reservation
-                wait_write(addr, size, id, trans_id);
-                if (trans_id != id) begin
-                    // SC failed
-                    b_resp = axi_pkg::RESP_OKAY;
-                end else begin
-                    // Success
-                    set_memory(address, w_data, size);
-                    b_resp = axi_pkg::RESP_EXOKAY;
-                end
             end else begin
                 b_resp = axi_pkg::RESP_SLVERR;
                 r_data = '0;

@@ -271,7 +271,7 @@ module axi_riscv_amos #(
         if (adapter_ready) begin
             atop_valid_d = NONE;
             atop_r_resp_d = 1'b0;
-            if (slv_aw_valid_i && slv_aw_atop_i) begin
+            if (slv_aw_valid_i && (slv_aw_atop_i[5:4] != axi_pkg::ATOP_NONE)) begin
                 // Default is invalid request
                 atop_valid_d = INVALID;
                 // Valid load operation
@@ -346,7 +346,7 @@ module axi_riscv_amos #(
         aw_state_d      = aw_state_q;
 
         // Default control: Block AW channel if...
-        if (slv_aw_valid_i && slv_aw_atop_i) begin
+        if (slv_aw_valid_i && (slv_aw_atop_i[5:4] != axi_pkg::ATOP_NONE)) begin
             // Block if atomic request
             mst_aw_valid_o = 1'b0;
             slv_aw_ready_o = 1'b0;
@@ -377,7 +377,7 @@ module axi_riscv_amos #(
 
             FEEDTHROUGH_AW: begin
                 // Feedthrough slave to master until atomic operation is detected
-                if (slv_aw_valid_i && slv_aw_atop_i && adapter_ready) begin
+                if (slv_aw_valid_i && (slv_aw_atop_i[5:4] != axi_pkg::ATOP_NONE) && adapter_ready) begin
                     // Acknowledge atomic transaction
                     slv_aw_ready_o = 1'b1;
                     // Remember request
