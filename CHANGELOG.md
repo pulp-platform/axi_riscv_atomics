@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 [Semantic Versioning](http://semver.org).
 
 
+## Unreleased
+
+### Added
+
+### Changed
+
+### Fixed
+- `axi_riscv_amos`: Use `axi_pkg::ATOP_R_RESP` to determine the need for an R response.
+- `axi_riscv_amos`: Only treat requests as ATOPs if the two MSBs are nonzero.
+
+
 ## 0.3.0 - 2022-03-11
 
 ### Added

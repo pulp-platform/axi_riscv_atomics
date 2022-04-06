@@ -3,7 +3,7 @@ package:
   authors: ["Andreas Kurth <akurth@iis.ee.ethz.ch>", "Samuel Riedel <sriedel@student.ethz.ch>"]
 
 dependencies:
-  axi: { git: "https://github.com/pulp-platform/axi.git", version: 0.35.0 }
+  axi: { git: "https://github.com/pulp-platform/axi.git", version: 0.35.1 }
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.11.0 }
   common_verification: { git: "https://github.com/pulp-platform/common_verification.git", version: 0.2.1 }
 
