@@ -153,6 +153,9 @@ module axi_riscv_lrsc #(
 );
 
     // Declarations of Signals and Types
+    localparam int unsigned RES_ID_WIDTH = AXI_USER_AS_ID ?
+            AXI_USER_ID_MSB - AXI_USER_ID_LSB + 1
+            : AXI_ID_WIDTH;
 
     typedef logic [AXI_ADDR_WIDTH-1:0]  axi_addr_t;
     typedef logic [AXI_DATA_WIDTH-1:0]  axi_data_t;
@@ -160,6 +163,7 @@ module axi_riscv_lrsc #(
     typedef logic [1:0]                 axi_resp_t;
     typedef logic [AXI_USER_WIDTH-1:0]  axi_user_t;
     typedef logic [AXI_ADDR_WIDTH-3:0]  res_addr_t; // Track reservations word wise.
+    typedef logic [RES_ID_WIDTH-1:0]    res_id_t;
 
     typedef enum logic [1:0] {
         B_REGULAR='0, B_EXCLUSIVE, B_INJECT
@@ -230,17 +234,15 @@ module axi_riscv_lrsc #(
         B_NORMAL, B_FORWARD
     } b_state_t;
 
-    axi_id_t        ar_push_id,
-                    art_check_id,
-                    b_status_inp_id,
+    axi_id_t        b_status_inp_id,
                     b_status_oup_id,
                     rifq_oup_id;
 
-    axi_user_t      ar_push_user,
-                    art_check_user;
-
     res_addr_t      ar_push_addr,
                     art_check_clr_addr;
+
+    res_id_t        art_set_id,
+                    art_check_id;
 
     logic           ar_push_excl,
                     ar_push_res;
@@ -321,7 +323,7 @@ module axi_riscv_lrsc #(
     ) i_read_in_flight_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
-        .inp_id_i           (ar_push_id),
+        .inp_id_i           (slv_ar_id_i),
         .inp_data_i         (rifq_inp_data),
         .inp_req_i          (rifq_inp_req),
         .inp_gnt_o          (rifq_inp_gnt),
@@ -416,8 +418,6 @@ module axi_riscv_lrsc #(
         slv_ar_ready_o                  = 1'b0;
         ar_push_addr                    = '0;
         ar_push_excl                    = '0;
-        ar_push_id                      = '0;
-        ar_push_user                    = '0;
         ar_push_res                     = '0;
         ar_push_valid                   = 1'b0;
         ar_wifq_exists_inp.data.addr    = '0;
@@ -432,8 +432,6 @@ module axi_riscv_lrsc #(
             AR_IDLE: begin
                 if (slv_ar_valid_i) begin
                     ar_push_addr = slv_ar_addr_i[AXI_ADDR_WIDTH-1:2];
-                    ar_push_id = slv_ar_id_i;
-                    ar_push_user = slv_ar_user_i;
                     ar_push_excl = (slv_ar_addr_i >= ADDR_BEGIN && slv_ar_addr_i <= ADDR_END &&
                             slv_ar_lock_i && slv_ar_len_i == 8'h00);
                     if (ar_push_excl) begin
@@ -665,8 +663,6 @@ module axi_riscv_lrsc #(
         mst_aw_valid            = 1'b0;
         slv_aw_ready_o          = 1'b0;
         art_check_clr_addr      = '0;
-        art_check_id            = '0;
-        art_check_user          = '0;
         art_check_clr_excl      = '0;
         art_check_clr_req       = 1'b0;
         aw_wifq_exists_inp.data = '0;
@@ -696,8 +692,6 @@ module axi_riscv_lrsc #(
                             if (aw_wifq_exists_gnt && !wifq_exists) begin
                                 // Check reservation and clear identical addresses.
                                 art_check_clr_addr  = slv_aw_addr_i[AXI_ADDR_WIDTH-1:2];
-                                art_check_id        = slv_aw_id_i;
-                                art_check_user      = slv_aw_user_i;
                                 art_check_clr_excl  = slv_aw_lock_i;
                                 if (mst_aw_ready) begin
                                     art_check_clr_req = 1'b1;
@@ -955,43 +949,30 @@ module axi_riscv_lrsc #(
     );
 
     // AXI Reservation Table
-    if (AXI_USER_AS_ID) begin : gen_res_tbl
-        axi_res_tbl #(
-            .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH-2), // Track reservations word-wise.
-            .AXI_ID_WIDTH   (AXI_USER_ID_MSB-AXI_USER_ID_LSB+1)
-        ) i_art (
-            .clk_i                  (clk_i),
-            .rst_ni                 (rst_ni),
-            .check_clr_addr_i       (art_check_clr_addr),
-            .check_id_i             (art_check_user[AXI_USER_ID_MSB:AXI_USER_ID_LSB]),
-            .check_clr_excl_i       (art_check_clr_excl),
-            .check_res_o            (art_check_res),
-            .check_clr_req_i        (art_check_clr_req),
-            .check_clr_gnt_o        (art_check_clr_gnt),
-            .set_addr_i             (ar_push_addr),
-            .set_id_i               (ar_push_user[AXI_USER_ID_MSB:AXI_USER_ID_LSB]),
-            .set_req_i              (art_set_req),
-            .set_gnt_o              (art_set_gnt)
-        );
-    end else begin : gen_res_tbl
-        axi_res_tbl #(
-            .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH-2), // Track reservations word-wise.
-            .AXI_ID_WIDTH   (AXI_ID_WIDTH)
-        ) i_art (
-            .clk_i                  (clk_i),
-            .rst_ni                 (rst_ni),
-            .check_clr_addr_i       (art_check_clr_addr),
-            .check_id_i             (art_check_id),
-            .check_clr_excl_i       (art_check_clr_excl),
-            .check_res_o            (art_check_res),
-            .check_clr_req_i        (art_check_clr_req),
-            .check_clr_gnt_o        (art_check_clr_gnt),
-            .set_addr_i             (ar_push_addr),
-            .set_id_i               (ar_push_id),
-            .set_req_i              (art_set_req),
-            .set_gnt_o              (art_set_gnt)
-        );
-    end
+
+    assign art_check_id = AXI_USER_AS_ID ?
+            slv_aw_user_i[AXI_USER_ID_MSB:AXI_USER_ID_LSB]
+            : slv_aw_id_i;
+    assign art_set_id = AXI_USER_AS_ID ?
+            slv_ar_user_i[AXI_USER_ID_MSB:AXI_USER_ID_LSB]
+            : slv_ar_id_i;
+    axi_res_tbl #(
+        .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH-2), // Track reservations word-wise.
+        .AXI_ID_WIDTH   (RES_ID_WIDTH)
+    ) i_art (
+        .clk_i                  (clk_i),
+        .rst_ni                 (rst_ni),
+        .check_clr_addr_i       (art_check_clr_addr),
+        .check_id_i             (art_check_id),
+        .check_clr_excl_i       (art_check_clr_excl),
+        .check_res_o            (art_check_res),
+        .check_clr_req_i        (art_check_clr_req),
+        .check_clr_gnt_o        (art_check_clr_gnt),
+        .set_addr_i             (ar_push_addr),
+        .set_id_i               (art_set_id),
+        .set_req_i              (art_set_req),
+        .set_gnt_o              (art_set_gnt)
+    );
 
     // Registers
     always_ff @(posedge clk_i, negedge rst_ni) begin
@@ -1022,10 +1003,12 @@ module axi_riscv_lrsc #(
             else $fatal(1, "AXI_MAX_READ_TXNS must be greater than 0!");
         assert (AXI_MAX_WRITE_TXNS > 0)
             else $fatal(1, "AXI_MAX_WRITE_TXNS must be greater than 0!");
-        assert (!AXI_USER_AS_ID || (AXI_USER_ID_MSB >= AXI_USER_ID_LSB))
-            else $fatal(1, "AXI_USER_ID_MSB must be greater equal to AXI_USER_ID_LSB!");
-        assert (!AXI_USER_AS_ID || (AXI_USER_WIDTH > AXI_USER_ID_MSB))
-            else $fatal(1, "AXI_USER_WIDTH must be greater than AXI_USER_ID_MSB!");
+        if (AXI_USER_AS_ID) begin
+            assert (AXI_USER_ID_MSB >= AXI_USER_ID_LSB)
+                else $fatal(1, "AXI_USER_ID_MSB must be greater equal to AXI_USER_ID_LSB!");
+            assert (AXI_USER_WIDTH > AXI_USER_ID_MSB)
+                else $fatal(1, "AXI_USER_WIDTH must be greater than AXI_USER_ID_MSB!");
+        end
     end
 `endif
 // pragma translate_on
