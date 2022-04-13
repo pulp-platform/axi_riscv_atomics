@@ -6,12 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 [Semantic Versioning](http://semver.org).
 
 
-## Unreleased
+## 0.4.0 - 2022-04-13
 
 ### Added
 - `axi_riscv_atomics`: Add capability to use the AXI User signal as reservation ID.
-
-### Changed
 
 ### Fixed
 - `axi_riscv_amos`: Use `axi_pkg::ATOP_R_RESP` to determine the need for an R response.
