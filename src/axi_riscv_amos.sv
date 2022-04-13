@@ -626,7 +626,7 @@ module axi_riscv_amos #(
                             slv_b_valid_o = 1'b1;
                             slv_b_id_o    = slv_aw_id_i;
                             slv_b_resp_o  = axi_pkg::RESP_SLVERR;
-                            slv_b_user_o  = '0;
+                            slv_b_user_o  = slv_aw_user_i;
                             if (!slv_b_ready_i) begin
                                 b_state_d = SEND_B;
                             end
@@ -645,7 +645,7 @@ module axi_riscv_amos #(
                     slv_b_valid_o = 1'b1;
                     slv_b_id_o    = id_q;
                     slv_b_resp_o  = axi_pkg::RESP_SLVERR;
-                    slv_b_user_o  = '0;
+                    slv_b_user_o  = aw_user_q;
                     if (slv_b_ready_i) begin
                         b_state_d = FEEDTHROUGH_B;
                     end else begin
@@ -899,7 +899,7 @@ module axi_riscv_amos #(
                             slv_r_id_o    = slv_aw_id_i;
                             slv_r_last_o  = 1'b1;
                             slv_r_resp_o  = axi_pkg::RESP_SLVERR;
-                            slv_r_user_o  = '0;
+                            slv_r_user_o  = slv_aw_user_i;
                             if (!slv_r_ready_i) begin
                                 // Hold R response
                                 r_state_d = SEND_R;
@@ -951,7 +951,7 @@ module axi_riscv_amos #(
                     if (atop_valid_q == INVALID && atop_r_resp_q) begin
                         slv_r_data_o = '0;
                         slv_r_resp_o = axi_pkg::RESP_SLVERR;
-                        slv_r_user_o = '0;
+                        slv_r_user_o = aw_user_q;
                     end
                     if (slv_r_ready_i) begin
                         r_state_d = FEEDTHROUGH_R;

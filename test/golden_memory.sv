@@ -103,12 +103,14 @@ package golden_model_pkg;
         parameter int unsigned AXI_ID_WIDTH_M = 8,
         parameter int unsigned AXI_ID_WIDTH_S = 16,
         parameter int unsigned AXI_USER_WIDTH = 0,
+        parameter int unsigned USER_AS_ID = 0,
         parameter time APPL_DELAY = 1ns,
         parameter time ACQ_DELAY = 1ns
     );
 
         localparam int unsigned MEM_OFFSET_BITS = $clog2(MEM_DATA_WIDTH/8);
         localparam int unsigned NUM_MAST_WIDTH  = AXI_ID_WIDTH_S-AXI_ID_WIDTH_M;
+        localparam int unsigned RES_ID_WIDTH    = USER_AS_ID ? AXI_USER_WIDTH : AXI_ID_WIDTH_S;
 
         typedef logic [MEM_ADDR_WIDTH-1:0] mem_addr_t;
 
@@ -147,9 +149,28 @@ package golden_model_pkg;
         endfunction : calculate_dut_address
 
         function automatic logic [AXI_ID_WIDTH_S-1:0] slave_id(logic [AXI_ID_WIDTH_M-1:0] master_id, logic [NUM_MAST_WIDTH-1:0] master_channel);
-            slave_id[AXI_ID_WIDTH_S-1:AXI_ID_WIDTH_M] = ~master_channel;
+            slave_id = '0;
+            if (AXI_ID_WIDTH_S > AXI_ID_WIDTH_M) begin
+                slave_id |= (~master_channel) << AXI_ID_WIDTH_M;
+            end
             slave_id[AXI_ID_WIDTH_M-1:0] = master_id;
         endfunction : slave_id
+
+        function automatic logic [RES_ID_WIDTH-1:0] get_monitor_w_id();
+            if (USER_AS_ID) begin
+                get_monitor_w_id = monitor.w_user;
+            end else begin
+                get_monitor_w_id = monitor.w_id[RES_ID_WIDTH-1:0];
+            end
+        endfunction : get_monitor_w_id
+
+        function automatic logic [RES_ID_WIDTH-1:0] get_monitor_r_id();
+            if (USER_AS_ID) begin
+                get_monitor_r_id = monitor.r_user;
+            end else begin
+                get_monitor_r_id = monitor.r_id[RES_ID_WIDTH-1:0];
+            end
+        endfunction : get_monitor_r_id
 
         /**
          * Take data that is MEM_DATA_WIDTH wide and cut it back to the specified size and optionally sign extend it
@@ -191,6 +212,7 @@ package golden_model_pkg;
             input  logic [MEM_DATA_WIDTH-1:0] w_data,
             input  logic [2:0]                size,
             input  logic [AXI_ID_WIDTH_M-1:0] m_id,
+            input  logic [AXI_USER_WIDTH-1:0] user,
             input  logic [NUM_MAST_WIDTH-1:0] master = 0,
             output logic [MEM_DATA_WIDTH-1:0] r_data,
             output logic [1:0]                b_resp,
@@ -205,18 +227,20 @@ package golden_model_pkg;
             automatic logic   signed [MEM_DATA_WIDTH-1:0] data_so  = 0;
 
             automatic logic          [AXI_ID_WIDTH_S-1:0] id = slave_id(m_id, master);
-            automatic logic          [AXI_ID_WIDTH_S-1:0] trans_id = 1;
+
+            automatic logic          [RES_ID_WIDTH-1:0]   trans_id = 1;
+            automatic logic          [RES_ID_WIDTH-1:0]   res_id = USER_AS_ID ? user : id;
 
             b_resp = axi_pkg::RESP_OKAY;
 
-            if (atop == 6'b000111) begin
+            if (atop == tb_axi_pkg::ATOP_LRSC) begin
                 // LR/SC pair
                 // Wait for LR
-                read(addr, r_data, size, m_id, master);
+                read(addr, r_data, size, m_id, user, master);
 
                 // Check reservation
-                wait_write(addr, size, id, trans_id);
-                if (trans_id != id) begin
+                wait_write(addr, size, res_id, trans_id);
+                if (trans_id != res_id) begin
                     // SC failed
                     b_resp = axi_pkg::RESP_OKAY;
                 end else begin
@@ -226,19 +250,19 @@ package golden_model_pkg;
                 end
             end else if (atop[5:4] == axi_pkg::ATOP_NONE) begin
                 // Wait for the write
-                wait_b(id);
+                wait_b(res_id);
                 set_memory(address, w_data, size);
                 r_data = '0;
             end else if (atop == axi_pkg::ATOP_ATOMICSWAP) begin
                 // Wait for the write to happen
-                wait_b(id);
+                wait_b(res_id);
                 // Read before writing and then update memory
                 r_data = get_memory(address, size);
                 set_memory(address, w_data, size);
             end else if ((atop[5:3] == {axi_pkg::ATOP_ATOMICLOAD,  axi_pkg::ATOP_LITTLE_END}) ||
                          (atop[5:3] == {axi_pkg::ATOP_ATOMICSTORE, axi_pkg::ATOP_LITTLE_END})) begin
                 // Wait for the write to happen
-                wait_b(id);
+                wait_b(res_id);
                 data_uo = $unsigned(get_memory(address, size));
                 data_so = $signed(crop_data(get_memory(address, size), size, 1));
 
@@ -291,23 +315,28 @@ package golden_model_pkg;
             output logic [MEM_DATA_WIDTH-1:0] r_data,
             input  logic [2:0]                size,
             input  logic [AXI_ID_WIDTH_M-1:0] id,
+            input  logic [AXI_USER_WIDTH-1:0] user,
             input  logic [NUM_MAST_WIDTH-1:0] master = 0
         );
             // Calculate memory address
             automatic logic unsigned [MEM_ADDR_WIDTH-1:0] address = calculate_address(addr);
             // Wait until the transaction actually happens
-            wait_read(addr, size, slave_id(id, master));
+            if (USER_AS_ID) begin
+                wait_read(addr, size, user);
+            end else begin
+                wait_read(addr, size, slave_id(id, master));
+            end
             // Read data from golden model
             r_data = crop_data(get_memory(address, size), size);
         endtask : read
 
         // Linearization Functions
-        logic [AXI_ID_WIDTH_S-1:0] default_id = 0; // Systemverilog requires a assignable default value (required to make this argument optional)
+        logic [RES_ID_WIDTH-1:0] default_id = 0; // Systemverilog requires a assignable default value (required to make this argument optional)
         task wait_write(
             input logic [AXI_ADDR_WIDTH-1:0] addr,
             input logic [2:0]                size,
-            input logic [AXI_ID_WIDTH_S-1:0] id,
-            inout logic [AXI_ID_WIDTH_S-1:0] out_id=default_id
+            input logic [RES_ID_WIDTH-1:0]   id,
+            inout logic [RES_ID_WIDTH-1:0]   out_id=default_id
         );
             if (out_id) begin
                 // Wait for a transaction to be through the memory controller's buffers and return its ID
@@ -318,13 +347,13 @@ package golden_model_pkg;
                         break;
                     end
                 end
-                out_id = monitor.w_id;
+                out_id = get_monitor_w_id();
             end else begin
                 // Wait for the transaction to be through the memory controller's buffers
                 forever begin
                     @(posedge monitor.clk_i);
                     #(ACQ_DELAY);
-                    if (monitor.w_valid && monitor.w_id[AXI_ID_WIDTH_S-1:0] == id
+                    if (monitor.w_valid && get_monitor_w_id() == id
                             && monitor.w_addr == addr) begin
                         break;
                     end
@@ -333,13 +362,13 @@ package golden_model_pkg;
         endtask : wait_write
 
         task wait_b(
-            input logic [AXI_ID_WIDTH_S-1:0] id
+            input logic [RES_ID_WIDTH-1:0] id
         );
             // Wait for the transaction to be confirmed by the memory controller
             forever begin
                 @(posedge monitor.clk_i);
                 #(ACQ_DELAY);
-                if (monitor.w_valid && monitor.w_id[AXI_ID_WIDTH_S-1:0] == id) begin
+                if (monitor.w_valid && get_monitor_w_id() == id) begin
                     break;
                 end
             end
@@ -348,13 +377,13 @@ package golden_model_pkg;
         task wait_read(
             input logic [AXI_ADDR_WIDTH-1:0] addr,
             input logic [2:0]                size,
-            input logic [AXI_ID_WIDTH_S-1:0] id
+            input logic [RES_ID_WIDTH-1:0]   id
         );
             // Wait for the transaction to be through the memory controller's buffers
             forever begin
                 @(posedge monitor.clk_i);
                 #(ACQ_DELAY);
-                if (monitor.r_valid && monitor.r_id[AXI_ID_WIDTH_S-1:0] == id
+                if (monitor.r_valid && get_monitor_r_id() == id
                         && monitor.r_addr == addr) begin
                     break;
                 end

@@ -17,12 +17,14 @@ module automatic axi_riscv_atomics_tb;
     parameter NUM_MASTERS    = 32;
     parameter OFFSET         = 16;
     parameter MAX_TIMEOUT    = 1000; // Cycles
+    parameter USER_AS_ID     = `ifdef DEF_USER_AS_ID `DEF_USER_AS_ID `else 0 `endif; // Use the aw_user signal as the reservation ID instead of the aw_id
 
     parameter AXI_ADDR_WIDTH = 64;
     parameter AXI_DATA_WIDTH = 64;
     parameter AXI_ID_WIDTH_M = 8;
     parameter AXI_ID_WIDTH_S = AXI_ID_WIDTH_M + $clog2(NUM_MASTERS);
-    parameter AXI_USER_WIDTH = 6;
+    parameter AXI_ID_WIDTH_N = USER_AS_ID ? AXI_ID_WIDTH_M : AXI_ID_WIDTH_S;
+    parameter AXI_USER_WIDTH = $clog2(NUM_MASTERS);
 
     parameter SYS_DATA_WIDTH = 64;
     parameter SYS_OFFSET_BIT = $clog2(SYS_DATA_WIDTH/8);
@@ -65,7 +67,7 @@ module automatic axi_riscv_atomics_tb;
     AXI_BUS #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
         .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
+        .AXI_ID_WIDTH   ( AXI_ID_WIDTH_N ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH )
     ) axi_mem();
 
@@ -73,6 +75,13 @@ module automatic axi_riscv_atomics_tb;
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
         .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
         .AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
+        .AXI_USER_WIDTH ( AXI_USER_WIDTH )
+    ) axi_iwc();
+
+    AXI_BUS #(
+        .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
+        .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
+        .AXI_ID_WIDTH   ( AXI_ID_WIDTH_N ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH )
     ) axi_dut();
 
@@ -97,7 +106,7 @@ module automatic axi_riscv_atomics_tb;
     MONITOR_BUS_DV #(
         .ADDR_WIDTH ( AXI_ADDR_WIDTH ),
         .DATA_WIDTH ( AXI_DATA_WIDTH ),
-        .ID_WIDTH   ( AXI_ID_WIDTH_S ),
+        .ID_WIDTH   ( AXI_ID_WIDTH_N ),
         .USER_WIDTH ( AXI_USER_WIDTH )
     ) mem_monitor_dv (
         .clk_i  ( clk )
@@ -129,14 +138,51 @@ module automatic axi_riscv_atomics_tb;
         .rst_ni ( rst_n   ),
         .test_i ( 1'b0    ),
         .slv    ( axi_cl  ),
-        .mst    ( axi_dut )
+        .mst    ( axi_iwc )
+    );
+
+    axi_iw_converter_intf #(
+      .AXI_SLV_PORT_ID_WIDTH        ( AXI_ID_WIDTH_S    ),
+      .AXI_MST_PORT_ID_WIDTH        ( AXI_ID_WIDTH_N    ),
+      .AXI_SLV_PORT_MAX_UNIQ_IDS    ( 2**AXI_ID_WIDTH_S ),
+      .AXI_SLV_PORT_MAX_TXNS_PER_ID ( 8                 ),
+      .AXI_SLV_PORT_MAX_TXNS        ( NUM_MASTERS*8     ),
+      .AXI_MST_PORT_MAX_UNIQ_IDS    ( 2**AXI_ID_WIDTH_N ),
+      .AXI_MST_PORT_MAX_TXNS_PER_ID ( 8                 ),
+      .AXI_ADDR_WIDTH               ( AXI_ADDR_WIDTH    ),
+      .AXI_DATA_WIDTH               ( AXI_DATA_WIDTH    ),
+      .AXI_USER_WIDTH               ( AXI_USER_WIDTH    )
+    ) i_axi_iw_converter_intf (
+      .clk_i  ( clk     ),
+      .rst_ni ( rst_n   ),
+      .slv    ( axi_iwc ),
+      .mst    ( axi_dut )
+    );
+
+    // axi_riscv_amos_wrap #(
+    axi_riscv_atomics_wrap #(
+        .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH   ),
+        .AXI_DATA_WIDTH     ( AXI_DATA_WIDTH   ),
+        .AXI_ID_WIDTH       ( AXI_ID_WIDTH_N   ),
+        .AXI_USER_WIDTH     ( AXI_USER_WIDTH   ),
+        .AXI_MAX_READ_TXNS  ( 31               ),
+        .AXI_MAX_WRITE_TXNS ( 31               ),
+        .AXI_USER_AS_ID     ( USER_AS_ID       ),
+        .AXI_USER_ID_MSB    ( AXI_USER_WIDTH-1 ),
+        .AXI_USER_ID_LSB    ( 0                ),
+        .RISCV_WORD_WIDTH   ( SYS_DATA_WIDTH   )
+    ) i_axi_atomic_adapter (
+        .clk_i    ( clk     ),
+        .rst_ni   ( rst_n   ),
+        .mst      ( axi_mem ),
+        .slv      ( axi_dut )
     );
 
     // Memory accessible over AXI bus
     axi_sim_mem_intf #(
         .AXI_ADDR_WIDTH ( AXI_ADDR_WIDTH ),
         .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
-        .AXI_ID_WIDTH   ( AXI_ID_WIDTH_S ),
+        .AXI_ID_WIDTH   ( AXI_ID_WIDTH_N ),
         .AXI_USER_WIDTH ( AXI_USER_WIDTH ),
         .APPL_DELAY     ( tCK * 1 / 4    ),
         .ACQ_DELAY      ( tCK * 3 / 4    )
@@ -158,22 +204,6 @@ module automatic axi_riscv_atomics_tb;
         .mon_r_user_o       ( mem_monitor_dv.r_user       ),
         .mon_r_beat_count_o ( mem_monitor_dv.r_beat_count ),
         .mon_r_last_o       ( mem_monitor_dv.r_last       )
-    );
-
-    // axi_riscv_amos_wrap #(
-    axi_riscv_atomics_wrap #(
-        .AXI_ADDR_WIDTH     ( AXI_ADDR_WIDTH ),
-        .AXI_DATA_WIDTH     ( AXI_DATA_WIDTH ),
-        .AXI_ID_WIDTH       ( AXI_ID_WIDTH_S ),
-        .AXI_USER_WIDTH     ( AXI_USER_WIDTH ),
-        .AXI_MAX_READ_TXNS  ( 31             ),
-        .AXI_MAX_WRITE_TXNS ( 31             ),
-        .RISCV_WORD_WIDTH   ( SYS_DATA_WIDTH )
-    ) i_axi_atomic_adapter (
-        .clk_i    ( clk     ),
-        .rst_ni   ( rst_n   ),
-        .mst      ( axi_mem ),
-        .slv      ( axi_dut )
     );
 
     // AXI Testbench
@@ -204,8 +234,9 @@ module automatic axi_riscv_atomics_tb;
         .AXI_ADDR_WIDTH( AXI_ADDR_WIDTH ),
         .AXI_DATA_WIDTH( AXI_DATA_WIDTH ),
         .AXI_ID_WIDTH_M( AXI_ID_WIDTH_M ),
-        .AXI_ID_WIDTH_S( AXI_ID_WIDTH_S ),
+        .AXI_ID_WIDTH_S( AXI_ID_WIDTH_N ),
         .AXI_USER_WIDTH( AXI_USER_WIDTH ),
+        .USER_AS_ID    ( USER_AS_ID     ),
         .APPL_DELAY    ( tCK * 1 / 4    ),
         .ACQ_DELAY     ( tCK * 3 / 4    )
     ) gold_memory = new(mem_monitor_dv);
@@ -293,6 +324,7 @@ module automatic axi_riscv_atomics_tb;
                 begin
                     automatic logic [AXI_ADDR_WIDTH-1:0] address;
                     automatic logic [AXI_ID_WIDTH_M-1:0] id;
+                    automatic logic [AXI_USER_WIDTH-1:0] user;
                     automatic logic [SYS_DATA_WIDTH-1:0] data_init;
                     automatic logic [SYS_DATA_WIDTH-1:0] data_amo;
                     automatic logic [2:0]                size;
@@ -309,12 +341,13 @@ module automatic axi_riscv_atomics_tb;
                         void'(randomize(address));
                         void'(randomize(data_init));
                         void'(randomize(id));
+                        void'(randomize(user));
                         size = $urandom_range(0,SYS_OFFSET_BIT);
                         create_consistent_transaction(address, size, 0);
                         // Write
                         fork
-                            axi_dut_master[m].axi_write(address, data_init, size, id, r_data, b_resp);
-                            gold_memory.write(address, data_init, size, id, m, exp_data, exp_b_resp);
+                            axi_dut_master[m].axi_write(address, data_init, size, id, user, r_data, b_resp);
+                            gold_memory.write(address, data_init, size, id, user, m, exp_data, exp_b_resp);
                         join
                         assert(b_resp == exp_b_resp) else begin
                             $warning("B (0x%1x) did not match expected (0x%1x)", b_resp, exp_b_resp);
@@ -322,8 +355,8 @@ module automatic axi_riscv_atomics_tb;
                         end
                         // Read
                         fork
-                            axi_dut_master[m].axi_read(address, act_data, size, id);
-                            gold_memory.read(address, exp_data, size, id, m);
+                            axi_dut_master[m].axi_read(address, act_data, size, id, user);
+                            gold_memory.read(address, exp_data, size, id, user, m);
                         join
                         assert(act_data == exp_data) else begin
                             $warning("R (0x%x) did not match expected data (0x%x) at address 0x%x, size 0x%x", act_data, exp_data, address, size);
@@ -347,7 +380,7 @@ module automatic axi_riscv_atomics_tb;
                         // Make transaction valid
                         create_consistent_transaction(address, size, atop);
                         // Execute a write with data init, a AMO with data_amo and read result
-                        write_amo_read_cycle(m, address, data_init, data_amo, size, 0, atop);
+                        write_amo_read_cycle(m, address, data_init, data_amo, size, id, m, atop);
                         // Wait a random amount of cycles
                         repeat ($urandom_range(100,MAX_TIMEOUT/2)) @(posedge clk);
                     end
@@ -380,7 +413,7 @@ module automatic axi_riscv_atomics_tb;
                 create_consistent_transaction(address, size, 0);
 
                 repeat (20000) begin
-                    axi_dut_master[0].axi_write(address, data_init, size, id, r_data, b_resp);
+                    axi_dut_master[0].axi_write(address, data_init, size, id, 0, r_data, b_resp);
                 end
             end
             begin
@@ -402,7 +435,7 @@ module automatic axi_riscv_atomics_tb;
                     // Make transaction valid
                     create_consistent_transaction(address, size, atop);
                     // Execute a write with data init, a AMO with data_amo and read result
-                    write_amo_read_cycle(1, address, data_init, data_amo, size, id, atop);
+                    write_amo_read_cycle(1, address, data_init, data_amo, size, id, 1, atop);
                     // Wait a random amount of cycles
                     // repeat ($urandom_range(100,1000)) @(posedge clk);
                 end
@@ -419,7 +452,6 @@ module automatic axi_riscv_atomics_tb;
         localparam AXI_OFFSET_BIT = $clog2(AXI_DATA_WIDTH/8);
 
         automatic logic [AXI_ADDR_WIDTH-1:0] address;
-        automatic logic [AXI_ID_WIDTH_M-1:0] id;
         automatic logic [SYS_DATA_WIDTH-1:0] data_init;
         automatic logic [SYS_DATA_WIDTH-1:0] data_amo;
         automatic logic [2:0]                size;
@@ -465,7 +497,6 @@ module automatic axi_riscv_atomics_tb;
                         void'(randomize(address));
                         void'(randomize(data_init));
                         void'(randomize(data_amo));
-                        void'(randomize(id));
                         address[AXI_OFFSET_BIT-1:0] = k;
 
                         case (l)
@@ -493,7 +524,7 @@ module automatic axi_riscv_atomics_tb;
 
                         create_consistent_transaction(address, size, atop);
                         // $display("Test: AMO=%x, Size=%x, Offset=%x, Sign=%x: %x # %x @(%x)", i, j, k, l, data_init, data_amo, address);
-                        write_amo_read_cycle(0, address, data_init, data_amo, size, 0, atop);
+                        write_amo_read_cycle(0, address, data_init, data_amo, size, 0, 0, atop);
 
                     end
                 end
@@ -501,154 +532,6 @@ module automatic axi_riscv_atomics_tb;
         end
 
     endtask : test_all_amos
-
-    // Test if the adapter inserts the write request correctly
-    // ! This only works with a memory controller that allows multiple outstanding transactions
-    task automatic test_interleaving();
-        // Parameters
-        parameter NUM_BURSTS    = 4;
-        parameter INIT_MEM_VAL  = 305419896; // 0x12345678
-        parameter ATOP_OPERAND  = 43962;     // 0xABBA
-        // Variables
-        automatic int unsigned addr = MEM_START_ADDR;
-        automatic logic [AXI_ID_WIDTH_M-1:0] id;
-        automatic logic [SYS_DATA_WIDTH-1:0] r_data;
-        automatic logic [2:0] size = SYS_OFFSET_BIT;
-        automatic logic [SYS_DATA_WIDTH-1:0] exp_data;
-        automatic logic [1:0] b_resp;
-        automatic logic [1:0] exp_b_resp;
-
-        automatic axi_test::axi_ax_beat #(.AW(AXI_ADDR_WIDTH), .IW(AXI_ID_WIDTH_M), .UW(AXI_USER_WIDTH)) ax_beat = new;
-        automatic axi_test::axi_r_beat  #(.DW(AXI_DATA_WIDTH), .IW(AXI_ID_WIDTH_M), .UW(AXI_USER_WIDTH))  r_beat = new;
-        automatic axi_test::axi_w_beat  #(.DW(AXI_DATA_WIDTH), .UW(AXI_USER_WIDTH)) w_beat = new;
-        automatic axi_test::axi_b_beat  #(.IW(AXI_ID_WIDTH_M), .UW(AXI_USER_WIDTH)) b_beat = new;
-
-        $display("Test interleaving of write accesses...\n");
-
-        // Initialize memory with 0x12345678 + i
-        for (int i = 0; i < 3*NUM_BURSTS; i++) begin
-            addr = MEM_START_ADDR + (i*SYS_DATA_WIDTH/8);
-            axi_dut_master[i].axi_write(addr, INIT_MEM_VAL + i, size, 1, r_data, b_resp);
-        end
-
-        ax_beat.ax_size = size;
-        ax_beat.ax_atop = 6'b000000;
-        // Generate lots of write requests without sending the data yet
-        for (int i = 1; i < NUM_BURSTS; i++) begin
-            // Generate AW request
-            ax_beat.ax_addr = MEM_START_ADDR + (i*AXI_DATA_WIDTH/8);;
-            void'(randomize(id));
-            ax_beat.ax_id = id;
-            axi_dut_master[i].send_aw(ax_beat);
-        end
-
-        // Generate an ATOP request
-        ax_beat.ax_addr = MEM_START_ADDR;
-        ax_beat.ax_atop = 6'b100000;
-        void'(randomize(id));
-        ax_beat.ax_id   = id;
-        axi_dut_master[0].send_aw(ax_beat);
-        // Reset ATOP to regular requests
-        ax_beat.ax_atop = 6'b000000;
-
-        // Accept the R response
-        fork
-            begin
-                axi_dut_master[0].recv_r(r_beat);
-                r_data = r_beat.r_data[SYS_DATA_WIDTH-1:0];
-                if (r_data != INIT_MEM_VAL) begin
-                    $display("Test interleaving: ATOP R response was %x. Exp %x", r_data, INIT_MEM_VAL);
-                end
-            end
-        join_none
-
-        // Generate lots of write requests without sending the data yet
-        for (int i = NUM_BURSTS; i < 2*NUM_BURSTS; i++) begin
-            // Generate AW request
-            ax_beat.ax_addr = MEM_START_ADDR + (i*AXI_DATA_WIDTH/8);;
-            void'(randomize(id));
-            ax_beat.ax_id = id;
-            axi_dut_master[i].send_aw(ax_beat);
-        end
-
-        fork
-            begin
-                // Send W data for AMO
-                w_beat.w_data = ATOP_OPERAND;
-                w_beat.w_last = '1;
-                w_beat.w_strb = '0;
-                w_beat.w_strb = {{SYS_DATA_WIDTH/8}{1'b1}};
-                axi_dut_master[0].send_w(w_beat);
-            end
-        join_none
-
-        // Keep sending requests and data
-        fork
-            // Generate further AW requests
-            for (int i = 2*NUM_BURSTS; i < 3*NUM_BURSTS; i++) begin
-                // Generate AW request
-                ax_beat.ax_addr = MEM_START_ADDR + (i*AXI_DATA_WIDTH/8);
-                void'(randomize(id));
-                ax_beat.ax_id = id;
-                axi_dut_master[i].send_aw(ax_beat);
-                @(posedge clk);
-            end
-            // Send the W data
-            fork
-                for (int i = 1; i < 3*NUM_BURSTS; i++) begin
-                    // Generate W request
-                    w_beat.w_data = i;
-                    w_beat.w_last = '1;
-                    w_beat.w_strb = '0;
-                    w_beat.w_strb = {{SYS_DATA_WIDTH/8}{1'b1}};
-                    axi_dut_master[i].send_w(w_beat);
-                    @(posedge clk);
-                    @(posedge clk);
-                end
-            join_none
-            // Accept the B response
-            for (int i = 0; i < 3*NUM_BURSTS; i++) begin
-                fork
-                    automatic int j = i;
-                    automatic axi_test::axi_b_beat  #(.IW(AXI_ID_WIDTH_M), .UW(AXI_USER_WIDTH)) b_beat_temp = new;
-                        axi_dut_master[j].recv_b(b_beat_temp);
-                join_none
-            end
-        join
-
-        // Wait for AMO to finish
-        wait fork;
-
-        // Check result
-        // Read result of ATOP
-        ax_beat.ax_addr = MEM_START_ADDR;
-        void'(randomize(id));
-        ax_beat.ax_id = id;
-        axi_dut_master[0].send_ar(ax_beat);
-        axi_dut_master[0].recv_r(r_beat);
-        r_data = r_beat.r_data[SYS_DATA_WIDTH-1:0];
-
-        if (r_data != (INIT_MEM_VAL + ATOP_OPERAND)) begin
-            $display("Test interleaving: ATOP result is %x. Exp %x", r_data, INIT_MEM_VAL + ATOP_OPERAND);
-        end
-
-        // Read all other writes
-        for (int i = 1; i < 3*NUM_BURSTS; i++) begin
-            // Generate AW request
-            ax_beat.ax_addr = MEM_START_ADDR + (i*AXI_DATA_WIDTH/8);;
-            void'(randomize(id));
-            ax_beat.ax_id = id;
-            axi_dut_master[i].send_ar(ax_beat);
-            axi_dut_master[i].recv_r(r_beat);
-            r_data = r_beat.r_data[SYS_DATA_WIDTH-1:0];
-            if (r_data != i) begin
-                $display("Test interleaving: Write result is %x. Exp %x", r_data, i);
-            end
-        end
-
-        #1000ns;
-
-    endtask : test_interleaving
 
     // Test multiple atomic accesses to the same address
     task automatic test_atomic_counter();
@@ -663,14 +546,14 @@ module automatic axi_riscv_atomics_tb;
         $display("Run atomic counter...\n");
 
         // Initialize to zero
-        axi_dut_master[0].axi_write(COUNTER_ADDR, 0, size, 0, r_data, b_resp, 6'b000000);
+        axi_dut_master[0].axi_write(COUNTER_ADDR, 0, size, 0, 0, r_data, b_resp, 6'b000000);
 
         // Create multiple drivers
         for (int i = 0; i < NUM_MASTERS; i++) begin
             fork
                 automatic int m = i;
                 for (int i = 0; i < NUM_ITERATION; i++) begin
-                    axi_dut_master[m].axi_write(COUNTER_ADDR, 1, size, m, r_data, b_resp, 6'b100000);
+                    axi_dut_master[m].axi_write(COUNTER_ADDR, 1, size, m, m, r_data, b_resp, 6'b100000);
                 end
             join_none
         end
@@ -679,7 +562,7 @@ module automatic axi_riscv_atomics_tb;
         wait fork;
 
         // Check result
-        axi_dut_master[0].axi_read(COUNTER_ADDR, r_data, size, 0);
+        axi_dut_master[0].axi_read(COUNTER_ADDR, r_data, size, 0, 0);
 
         if (r_data == NUM_ITERATION*NUM_MASTERS) begin
             $display("Adder result correct: %d", r_data);
@@ -705,8 +588,8 @@ module automatic axi_riscv_atomics_tb;
 
         // Initialize memory with 0
         fork
-            axi_dut_master[0].axi_write(address, 0, SYS_OFFSET_BIT, 1, r_data_init, b_resp_init);
-            gold_memory.write(address, 0, SYS_OFFSET_BIT, 1, 0, exp_data_init, exp_b_resp_init);
+            axi_dut_master[0].axi_write(address, 0, SYS_OFFSET_BIT, 1, 1, r_data_init, b_resp_init);
+            gold_memory.write(address, 0, SYS_OFFSET_BIT, 1, 1, 0, exp_data_init, exp_b_resp_init);
         join
 
         // Spawn multiple processes accessing this address
@@ -715,6 +598,7 @@ module automatic axi_riscv_atomics_tb;
                 automatic int m = i;
                 automatic logic [SYS_OFFSET_BIT-1:0] addr_range;
                 automatic logic [AXI_ID_WIDTH_M-1:0] id;
+                automatic logic [AXI_USER_WIDTH-1:0] user;
                 automatic logic [AXI_ID_WIDTH_S-1:0] s_id;
                 automatic logic [SYS_DATA_WIDTH-1:0] w_data;
                 automatic logic [2:0]                size = 3'b011;
@@ -727,6 +611,7 @@ module automatic axi_riscv_atomics_tb;
                     // Randomize address but keep it in same word
                     void'(randomize(addr_range));
                     address = ADDRESS + addr_range;
+                    user = m;
                     void'(randomize(id));
                     void'(randomize(w_data));
                     void'(randomize(atop));
@@ -737,8 +622,8 @@ module automatic axi_riscv_atomics_tb;
                     end
                     create_consistent_transaction(address, size, atop);
                     fork
-                        axi_dut_master[m].axi_write(address, w_data, size, id, r_data, b_resp, atop);
-                        gold_memory.write(address, w_data, size, id, m, exp_data, exp_b_resp, atop);
+                        axi_dut_master[m].axi_write(address, w_data, size, id, user, r_data, b_resp, atop);
+                        gold_memory.write(address, w_data, size, id, user, m, exp_data, exp_b_resp, atop);
                     join
                     assert(b_resp == exp_b_resp) else begin
                         $warning("B (0x%1x) did not match expected (0x%1x)", b_resp, exp_b_resp);
@@ -779,7 +664,7 @@ module automatic axi_riscv_atomics_tb;
 
         // Initialize memory with 0
         for (int i = 0; i < (ADDRESS_END-ADDRESS_START)/(SYS_DATA_WIDTH/8); i+=(SYS_DATA_WIDTH/8)) begin
-            write_amo_read_cycle(0, ADDRESS_START+i, 0, 0, SYS_OFFSET_BIT, 0, 0);
+            write_amo_read_cycle(0, ADDRESS_START+i, 0, 0, SYS_OFFSET_BIT, 0, 0, 0);
         end
 
         // Spawn multiple processes accessing this address
@@ -788,6 +673,7 @@ module automatic axi_riscv_atomics_tb;
                 automatic int m = i;
                 automatic logic [AXI_ADDR_WIDTH-1:0] address;
                 automatic logic [AXI_ID_WIDTH_M-1:0] id;
+                automatic logic [AXI_USER_WIDTH-1:0] user = m;
                 automatic logic [SYS_DATA_WIDTH-1:0] data_init;
                 automatic logic [SYS_DATA_WIDTH-1:0] data_amo;
                 automatic logic [2:0]                size;
@@ -803,7 +689,7 @@ module automatic axi_riscv_atomics_tb;
                     // void'(randomize(size)); // Half-word not supported by LRSC yet
                     size = SYS_OFFSET_BIT;
                     create_consistent_transaction(address, size, atop);
-                    write_amo_read_cycle(m, address, data_init, data_amo, size, id, atop);
+                    write_amo_read_cycle(m, address, data_init, data_amo, size, id, user, atop);
                 end
             join_none
         end
@@ -857,65 +743,6 @@ module automatic axi_riscv_atomics_tb;
         end
     endfunction : create_valid_atop
 
-    task automatic write_cycle(
-        input int unsigned               driver,
-        input logic [AXI_ADDR_WIDTH-1:0] address,
-        input logic [SYS_DATA_WIDTH-1:0] data,
-        input logic [SYS_DATA_WIDTH-1:0] data_amo,
-        input logic [2:0]                size,
-        input logic [AXI_ID_WIDTH_M-1:0] id,
-        input logic [5:0]                atop
-    );
-        automatic logic [AXI_ID_WIDTH_M-1:0] trans_id = id;
-        automatic logic [SYS_DATA_WIDTH-1:0] r_data;
-        automatic logic [SYS_DATA_WIDTH-1:0] exp_data;
-        automatic logic [SYS_DATA_WIDTH-1:0] act_data;
-        automatic logic [1:0]  b_resp;
-        automatic logic [1:0]  exp_b_resp;
-
-        // Write (Need valid memory for atop)
-        if (!id) begin
-            void'(randomize(trans_id));
-        end
-        fork
-            axi_dut_master[driver].axi_write(address, data, size, trans_id, r_data, b_resp);
-            gold_memory.write(address, data, size, trans_id, driver, exp_data, exp_b_resp);
-        join
-        // AMO
-        if (!id) begin
-            void'(randomize(trans_id));
-        end
-        fork
-            // Atomic operation
-            axi_dut_master[driver].axi_write(address, data_amo, size, trans_id, r_data, b_resp, atop);
-            // Golden model
-            gold_memory.write(address, data_amo, size, trans_id, driver, exp_data, exp_b_resp, atop);
-        join
-        assert(b_resp == exp_b_resp) else begin
-            $warning("B (0x%1x) did not match expected (0x%1x)", b_resp, exp_b_resp);
-            num_errors += 1;
-        end
-        if ((atop[5:3] == {axi_pkg::ATOP_ATOMICLOAD, axi_pkg::ATOP_LITTLE_END}) |
-            (atop[5:3] == {axi_pkg::ATOP_ATOMICSWAP, axi_pkg::ATOP_LITTLE_END})) begin
-            assert(r_data == exp_data) else begin
-                $warning("ATOP (0x%x) did not match expected data (0x%x) at address 0x%x at operation: 0x%2x", r_data, exp_data, address, atop);
-                num_errors += 1;
-            end
-        end
-        // Read result
-        if (!id) begin
-            void'(randomize(trans_id));
-        end
-        fork
-            axi_dut_master[driver].axi_read(address, act_data, size, trans_id);
-            gold_memory.read(address, exp_data, size, trans_id, driver);
-        join
-        assert(act_data == exp_data) else begin
-            $warning("R (0x%x) did not match expected data (0x%x) at address 0x%x, size %x, after operation: 0x%2x (0x%x)", act_data, exp_data, address, size, atop, data);
-            num_errors += 1;
-        end
-    endtask : write_cycle
-
     task automatic write_amo_read_cycle(
         input int unsigned               driver,
         input logic [AXI_ADDR_WIDTH-1:0] address,
@@ -923,6 +750,7 @@ module automatic axi_riscv_atomics_tb;
         input logic [SYS_DATA_WIDTH-1:0] data_amo,
         input logic [2:0]                size,
         input logic [AXI_ID_WIDTH_M-1:0] id,
+        input logic [AXI_USER_WIDTH-1:0] user,
         input logic [5:0]                atop
     );
         automatic logic [AXI_ID_WIDTH_M-1:0] trans_id = id;
@@ -937,8 +765,8 @@ module automatic axi_riscv_atomics_tb;
             void'(randomize(trans_id));
         end
         fork
-            axi_dut_master[driver].axi_write(address, data_init, size, trans_id, r_data, b_resp);
-            gold_memory.write(address, data_init, size, trans_id, driver, exp_data, exp_b_resp);
+            axi_dut_master[driver].axi_write(address, data_init, size, trans_id, user, r_data, b_resp);
+            gold_memory.write(address, data_init, size, trans_id, user, driver, exp_data, exp_b_resp);
         join
         // AMO
         if (!id) begin
@@ -946,9 +774,9 @@ module automatic axi_riscv_atomics_tb;
         end
         fork
             // Atomic operation
-            axi_dut_master[driver].axi_write(address, data_amo, size, trans_id, r_data, b_resp, atop);
+            axi_dut_master[driver].axi_write(address, data_amo, size, trans_id, user, r_data, b_resp, atop);
             // Golden model
-            gold_memory.write(address, data_amo, size, trans_id, driver, exp_data, exp_b_resp, atop);
+            gold_memory.write(address, data_amo, size, trans_id, user, driver, exp_data, exp_b_resp, atop);
         join
         assert(b_resp == exp_b_resp) else begin
             $warning("B (0x%1x) did not match expected (0x%1x)", b_resp, exp_b_resp);
@@ -968,9 +796,9 @@ module automatic axi_riscv_atomics_tb;
         fork
             begin
                 @(posedge clk);
-                axi_dut_master[driver].axi_read(address, act_data, size, trans_id);
+                axi_dut_master[driver].axi_read(address, act_data, size, trans_id, user);
             end
-            gold_memory.read(address, exp_data, size, trans_id, driver);
+            gold_memory.read(address, exp_data, size, trans_id, user, driver);
         join
         assert(act_data == exp_data) else begin
             $warning("R (0x%x) did not match expected data (0x%x) at address 0x%x, size %x, after operation: 0x%2x (0x%x)", act_data, exp_data, address, size, atop, data_init);

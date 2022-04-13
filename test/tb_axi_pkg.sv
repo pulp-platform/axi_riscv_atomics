@@ -14,6 +14,8 @@ import axi_test::*;
 
 package tb_axi_pkg;
 
+    axi_pkg::atop_t ATOP_LRSC = 6'b000111;
+
     class axi_access #(
         parameter int  AW = 32  , // AXI address width
         parameter int  DW = 32  , // AXI data width
@@ -62,6 +64,7 @@ package tb_axi_pkg;
             input  logic [SW-1:0] data,
             input  logic [2:0]    size,
             input  logic [IW-1:0] id,
+            input  logic [UW-1:0] user,
             output logic [DW-1:0] result,
             output logic [1:0]    b_resp,
             input  logic [5:0]    atop = 0
@@ -75,15 +78,16 @@ package tb_axi_pkg;
             map_sys2axi_data(address, data, size, axi_data, strb);
             // Send AW and W request
             ax_beat.ax_id    = id;
+            ax_beat.ax_user  = user;
             ax_beat.ax_addr  = address;
             ax_beat.ax_size  = size;
             ax_beat.ax_burst = axi_pkg::BURST_INCR;
             w_beat.w_data    = axi_data;
             w_beat.w_strb    = strb;
             w_beat.w_last    = 1'b1;
-            if (atop == 6'b000111) begin
+            if (atop == ATOP_LRSC) begin
                 // LRSC pair
-                axi_read(address, result, size, id, 1'b1);
+                axi_read(address, result, size, id, user, 1'b1);
                 rand_delay(0,10*RAND_DELAY);
                 ax_beat.ax_atop = '0;
                 ax_beat.ax_lock = 1'b1;
@@ -136,12 +140,14 @@ package tb_axi_pkg;
             output logic [SW-1:0] data,
             input  logic [2:0]    size,
             input  logic [IW-1:0] id,
+            input  logic [UW-1:0] user,
             input  logic          lock = 1'b0
         );
             automatic ax_beat_t ax_beat = new;
             automatic r_beat_t  r_beat  = new;
             // Send AW and W request
             ax_beat.ax_id    = id;
+            ax_beat.ax_user  = user;
             ax_beat.ax_addr  = address;
             ax_beat.ax_size  = size;
             ax_beat.ax_lock  = lock;
