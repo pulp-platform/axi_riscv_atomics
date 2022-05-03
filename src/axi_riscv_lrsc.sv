@@ -493,13 +493,10 @@ module axi_riscv_lrsc #(
     );
 
     // ID Queue to track downstream W bursts and their pending B responses.
-    // Workaround for bug in Questa (at least 2018.07 is affected): Flatten the enum into a logic
-    // vector before using that type when instantiating `id_queue`.
-    `ifdef QUESTA
+    // Workaround for bug in Questa (at least 2018.07 is affected) and VCS (at least 2020.12 is
+    // affected):
+    // Flatten the enum into a logic vector before using that type when instantiating `id_queue`.
     typedef logic [$bits(b_cmd_t)-1:0] b_cmd_flat_t;
-    `else
-    typedef b_cmd_t b_cmd_flat_t;
-    `endif
     b_cmd_flat_t b_status_inp_cmd_flat, b_status_oup_cmd_flat;
     assign b_status_inp_cmd_flat = b_cmd_flat_t'(b_status_inp_cmd);
     id_queue #(

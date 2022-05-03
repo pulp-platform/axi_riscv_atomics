@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](http://semver.org).
 
+## Unreleased
+
+### Changed
+- `axi_riscv_lrsc`: Always apply tool workaround, as VCS also has trouble with the syntax and
+  it is likely that other Synopsys tools suffer from the same problem.
 
 ## 0.4.0 - 2022-04-13
 
