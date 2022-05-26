@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 
 ## Unreleased
 
+### Added
+- `axi_riscv_atomics`: Add parameterizable cut between amo and lrsc stage
+
 ### Changed
 - `axi_riscv_lrsc_tb`: Remove timeunit to improve tool compatibility
 
