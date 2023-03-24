@@ -23,6 +23,8 @@ sources:
   # Level 3
   - src/axi_riscv_amos_wrap.sv
   - src/axi_riscv_atomics_wrap.sv
+  # Level 4
+  - src/axi_riscv_atomics_structs.sv
 
   - target: test
     files:
