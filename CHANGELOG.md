@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](http://semver.org).
 
+## 0.7.0 - 2023-03-24
+
+### Added
+- `axi_riscv_atomics_structs`: Add wrapper using struct ports
+
+
 ## 0.6.0 - 2022-09-29
 
 ### Added
