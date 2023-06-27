@@ -29,6 +29,7 @@ module axi_riscv_lrsc_wrap #(
     parameter bit AXI_USER_AS_ID = 1'b0,           // Use the AXI User signal instead of the AXI ID to track reservations
     parameter int unsigned AXI_USER_ID_MSB = 0,    // MSB of the ID in the user signal
     parameter int unsigned AXI_USER_ID_LSB = 0,    // LSB of the ID in the user signal
+    parameter int unsigned AXI_ADDR_LSB = $clog2(AXI_DATA_WIDTH/8), // log2 of granularity for reservations (ignored LSBs)
     /// Enable debug prints (not synthesizable).
     parameter bit DEBUG = 1'b0,
     /// Derived Parameters (do NOT change manually!)
@@ -52,6 +53,7 @@ module axi_riscv_lrsc_wrap #(
         .AXI_USER_AS_ID         (AXI_USER_AS_ID),
         .AXI_USER_ID_MSB        (AXI_USER_ID_MSB),
         .AXI_USER_ID_LSB        (AXI_USER_ID_LSB),
+        .AXI_ADDR_LSB           (AXI_ADDR_LSB),
         .DEBUG                  (DEBUG)
     ) i_lrsc (
         .clk_i           ( clk_i         ),

@@ -41,6 +41,7 @@ module axi_riscv_lrsc #(
     parameter bit AXI_USER_AS_ID = 1'b0,           // Use the AXI User signal instead of the AXI ID to track reservations
     parameter int unsigned AXI_USER_ID_MSB = 0,    // MSB of the ID in the user signal
     parameter int unsigned AXI_USER_ID_LSB = 0,    // LSB of the ID in the user signal
+    parameter int unsigned AXI_ADDR_LSB = $clog2(AXI_DATA_WIDTH/8), // log2 of granularity for reservations (ignored LSBs)
     /// Enable debug prints (not synthesizable).
     parameter bit DEBUG = 1'b0,
     /// Derived Parameters (do NOT change manually!)
@@ -157,13 +158,13 @@ module axi_riscv_lrsc #(
             AXI_USER_ID_MSB - AXI_USER_ID_LSB + 1
             : AXI_ID_WIDTH;
 
-    typedef logic [AXI_ADDR_WIDTH-1:0]  axi_addr_t;
-    typedef logic [AXI_DATA_WIDTH-1:0]  axi_data_t;
-    typedef logic [AXI_ID_WIDTH-1:0]    axi_id_t;
-    typedef logic [1:0]                 axi_resp_t;
-    typedef logic [AXI_USER_WIDTH-1:0]  axi_user_t;
-    typedef logic [AXI_ADDR_WIDTH-3:0]  res_addr_t; // Track reservations word wise.
-    typedef logic [RES_ID_WIDTH-1:0]    res_id_t;
+    typedef logic [AXI_ADDR_WIDTH-1:0]               axi_addr_t;
+    typedef logic [AXI_DATA_WIDTH-1:0]               axi_data_t;
+    typedef logic [AXI_ID_WIDTH-1:0]                 axi_id_t;
+    typedef logic [1:0]                              axi_resp_t;
+    typedef logic [AXI_USER_WIDTH-1:0]               axi_user_t;
+    typedef logic [AXI_ADDR_WIDTH-AXI_ADDR_LSB-1:0]  res_addr_t; // Track reservations with given granularity.
+    typedef logic [RES_ID_WIDTH-1:0]                 res_id_t;
 
     typedef enum logic [1:0] {
         B_REGULAR='0, B_EXCLUSIVE, B_INJECT
@@ -431,11 +432,11 @@ module axi_riscv_lrsc #(
 
             AR_IDLE: begin
                 if (slv_ar_valid_i) begin
-                    ar_push_addr = slv_ar_addr_i[AXI_ADDR_WIDTH-1:2];
+                    ar_push_addr = slv_ar_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB];
                     ar_push_excl = (slv_ar_addr_i >= ADDR_BEGIN && slv_ar_addr_i <= ADDR_END &&
                             slv_ar_lock_i && slv_ar_len_i == 8'h00);
                     if (ar_push_excl) begin
-                        ar_wifq_exists_inp.data.addr = slv_ar_addr_i[AXI_ADDR_WIDTH-1:2];
+                        ar_wifq_exists_inp.data.addr = slv_ar_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB];
                         ar_wifq_exists_req = 1'b1;
                         if (ar_wifq_exists_gnt) begin
                             ar_push_res = !wifq_exists;
@@ -533,7 +534,7 @@ module axi_riscv_lrsc #(
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
         .inp_id_i           (mst_aw_id_o),
-        .inp_data_i         ({mst_aw_addr_o[AXI_ADDR_WIDTH-1:2], slv_aw_lock_i}),
+        .inp_data_i         ({mst_aw_addr_o[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB], slv_aw_lock_i}),
         .inp_req_i          (mst_aw_valid && mst_aw_ready),
         .inp_gnt_o          (wifq_inp_gnt),
         .exists_data_i      (wifq_exists_inp.data),
@@ -680,15 +681,15 @@ module axi_riscv_lrsc #(
                         // Inside exclusively-accessible range.
                         // Make sure no exclusive AR to the same address is currently waiting.
                         if (!(slv_ar_valid_i && slv_ar_lock_i &&
-                                slv_ar_addr_i[AXI_ADDR_WIDTH-1:2] == slv_aw_addr_i[AXI_ADDR_WIDTH-1:2])) begin
+                                slv_ar_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB] == slv_aw_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB])) begin
                             // Make sure no exclusive write to the same address is currently in
                             // flight.
-                            aw_wifq_exists_inp.data.addr = slv_aw_addr_i[AXI_ADDR_WIDTH-1:2];
+                            aw_wifq_exists_inp.data.addr = slv_aw_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB];
                             aw_wifq_exists_inp.data.excl = 1'b1;
                             aw_wifq_exists_req = 1'b1;
                             if (aw_wifq_exists_gnt && !wifq_exists) begin
                                 // Check reservation and clear identical addresses.
-                                art_check_clr_addr  = slv_aw_addr_i[AXI_ADDR_WIDTH-1:2];
+                                art_check_clr_addr  = slv_aw_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB];
                                 art_check_clr_excl  = slv_aw_lock_i;
                                 if (mst_aw_ready) begin
                                     art_check_clr_req = 1'b1;
@@ -954,7 +955,7 @@ module axi_riscv_lrsc #(
             slv_ar_user_i[AXI_USER_ID_MSB:AXI_USER_ID_LSB]
             : slv_ar_id_i;
     axi_res_tbl #(
-        .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH-2), // Track reservations word-wise.
+        .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH-AXI_ADDR_LSB), // Track reservations with given granularity.
         .AXI_ID_WIDTH   (RES_ID_WIDTH)
     ) i_art (
         .clk_i                  (clk_i),

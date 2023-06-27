@@ -21,6 +21,7 @@ module axi_riscv_lrsc_tb #(
     parameter int unsigned ADDR_END = 8'hAF,
     parameter int unsigned AXI_MAX_READ_TXNS = 16,
     parameter int unsigned AXI_MAX_WRITE_TXNS = 16,
+    parameter int unsigned AXI_ADDR_LSB = 3,
     parameter bit DEBUG = 1'b0,
     // TB Parameters
     parameter int unsigned REQ_MIN_WAIT_CYCLES = 0,
@@ -98,6 +99,7 @@ module axi_riscv_lrsc_tb #(
         .AXI_USER_WIDTH         (AXI_USER_WIDTH),
         .AXI_MAX_READ_TXNS      (AXI_MAX_READ_TXNS),
         .AXI_MAX_WRITE_TXNS     (AXI_MAX_WRITE_TXNS),
+        .AXI_ADDR_LSB           (AXI_ADDR_LSB),
         .DEBUG                  (DEBUG)
     ) dut (
         .clk_i  (clk),
