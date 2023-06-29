@@ -434,7 +434,7 @@ module axi_riscv_lrsc #(
         ar_wifq_exists_inp.data.addr    = '0;
         ar_wifq_exists_inp.data.excl    = 1'b0;
         ar_wifq_exists_inp.mask         = '1;
-        ar_wifq_exists_inp.mask[0]      = 1'b0; // Don't care on `excl` bit.
+        ar_wifq_exists_inp.mask[12:0]   = '0; // Don't care on `excl` bit and page offset.
         ar_wifq_exists_req              = 1'b0;
         ar_state_d                      = ar_state_q;
 
@@ -714,6 +714,8 @@ module axi_riscv_lrsc #(
                             // flight.
                             aw_wifq_exists_inp.data.addr = slv_aw_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB];
                             aw_wifq_exists_inp.data.excl = 1'b1;
+                            // If this is a burst, check the entire page for exclusive writes in flight.
+                            if (slv_aw_len_i > 0) aw_wifq_exists_inp.mask[12:1] = '0;
                             aw_wifq_exists_req = 1'b1;
                             if (aw_wifq_exists_gnt && !wifq_exists) begin
                                 // Check reservation and clear identical addresses.
