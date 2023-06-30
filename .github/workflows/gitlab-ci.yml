@@ -1,0 +1,24 @@
+# Copyright 2023 ETH Zurich and University of Bologna.
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+
+# Based on https://github.com/pulp-platform/pulp-actions/tree/main/gitlab-ci#action-usage
+
+# Author: Nils Wistoff <nwistoff@iis.ee.ethz.ch>
+
+name: gitlab-ci
+
+on: [ push, pull_request, workflow_dispatch ]
+
+jobs:
+  gitlab-ci:
+    runs-on: ubuntu-latest
+    # Skip on forks or pull requests from forks due to missing secrets.
+    if: github.repository == 'pulp-platform/axi_riscv_atomics' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    steps:
+      - name: Check Gitlab CI
+        uses: pulp-platform/pulp-actions/gitlab-ci@v2
+        with:
+          domain: iis-git.ee.ethz.ch
+          repo: github-mirror/axi_riscv_atomics
+          token: ${{ secrets.GITLAB_TOKEN }}
