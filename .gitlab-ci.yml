@@ -1,0 +1,36 @@
+# Copyright 2023 ETH Zurich and University of Bologna.
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+
+# Author: Nils Wistoff <nwistoff@iis.ee.ethz.ch>
+
+variables:
+  VSIM: questa-2022.3 vsim -64
+  VLIB: questa-2022.3 vlib
+  VMAP: questa-2022.3 vmap
+  VCOM: questa-2022.3 vcom -64
+  VLOG: questa-2022.3 vlog -64
+  VOPT: questa-2022.3 vopt -64
+
+stages:
+  - test
+
+.test-tpl:
+  stage: test
+  needs:
+  variables:
+    TOPLEVEL: ""
+  timeout: 20min
+  script:
+    - bender script vsim -t test > compile.tcl
+    - $VSIM -c -quiet -do 'source compile.tcl; quit'
+    - $VSIM -c $TOPLEVEL -do "run -all"
+    - (! grep -n "Error:" transcript)
+
+tests:
+  extends: .test-tpl
+  parallel:
+    matrix:
+      - TOPLEVEL:
+          - axi_riscv_atomics_tb
+          - axi_riscv_lrsc_tb
