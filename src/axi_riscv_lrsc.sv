@@ -213,8 +213,8 @@ module axi_riscv_lrsc #(
         AR_IDLE, AR_WAIT
     } ar_state_t;
 
-    typedef enum logic {
-        AW_IDLE, AW_WAIT
+    typedef enum logic [1:0] {
+        AW_IDLE, AW_WAIT, AW_BURST
     } aw_state_t;
 
     typedef struct packed {
@@ -313,6 +313,16 @@ module axi_riscv_lrsc #(
     aw_chan_t       slv_aw,                     mst_aw;
 
     logic           mst_aw_valid,               mst_aw_ready;
+
+    res_addr_t      clr_addr_d,                 clr_addr_q;
+
+    res_id_t        clr_id_d,                   clr_id_q;
+
+    // 3 bits AxSIZE + 8 bits AxLEN - ignored LSBs
+    logic [10-AXI_ADDR_LSB:0] clr_len_d,        clr_len_q,
+                              aw_res_len;
+
+    logic           aw_wait_d,                  aw_wait_q;
 
     // AR and R Channel
 
@@ -424,7 +434,7 @@ module axi_riscv_lrsc #(
         ar_wifq_exists_inp.data.addr    = '0;
         ar_wifq_exists_inp.data.excl    = 1'b0;
         ar_wifq_exists_inp.mask         = '1;
-        ar_wifq_exists_inp.mask[0]      = 1'b0; // Don't care on `excl` bit.
+        ar_wifq_exists_inp.mask[12:0]   = '0; // Don't care on `excl` bit and page offset.
         ar_wifq_exists_req              = 1'b0;
         ar_state_d                      = ar_state_q;
 
@@ -656,6 +666,20 @@ module axi_riscv_lrsc #(
     assign mst_w_user_o     = slv_w_user_i;
     assign mst_w_last_o     = slv_w_last_i;
 
+    // Compute number of reservations written by this write transaction
+    always_comb begin
+        // AWSIZE == GRANULARITY: use burst length = AWLEN + 1
+        aw_res_len = slv_aw_len_i + 1;
+        // AWSIZE > GRANULARITY: clear beat-size / granularity reservations per beat
+        if (slv_aw_size_i > AXI_ADDR_LSB) begin
+            aw_res_len = (slv_aw_len_i + 1) << (slv_aw_size_i - AXI_ADDR_LSB);
+        end
+        // AWSIZE < GRANULARITY: clear one reservation for every granularity / beat-size beat
+        else if (slv_aw_size_i < AXI_ADDR_LSB) begin
+            aw_res_len = (slv_aw_len_i + 1) >> (AXI_ADDR_LSB - slv_aw_size_i);
+        end
+    end
+
     // Control AW Channel
     always_comb begin
         mst_aw_valid            = 1'b0;
@@ -672,6 +696,10 @@ module axi_riscv_lrsc #(
         w_cmd_inp               = '0;
         w_cmd_push              = 1'b0;
         aw_state_d              = aw_state_q;
+        clr_addr_d              = clr_addr_q;
+        clr_len_d               = clr_len_q;
+        clr_id_d                = clr_id_q;
+        aw_wait_d               = aw_wait_q;
 
         case (aw_state_q)
             AW_IDLE: begin
@@ -686,6 +714,8 @@ module axi_riscv_lrsc #(
                             // flight.
                             aw_wifq_exists_inp.data.addr = slv_aw_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB];
                             aw_wifq_exists_inp.data.excl = 1'b1;
+                            // If this is a burst, check the entire page for exclusive writes in flight.
+                            if (slv_aw_len_i > 0) aw_wifq_exists_inp.mask[12:1] = '0;
                             aw_wifq_exists_req = 1'b1;
                             if (aw_wifq_exists_gnt && !wifq_exists) begin
                                 // Check reservation and clear identical addresses.
@@ -724,7 +754,16 @@ module axi_riscv_lrsc #(
                                         w_cmd_push = 1'b1;
                                         // Track B response as regular-okay.
                                         b_status_inp_cmd = B_REGULAR;
-                                        if (!mst_aw_ready) begin
+                                        // Is this write longer than our reservation granularity?
+                                        if (aw_res_len > 1) begin
+                                            // latch start address and length of write (burst)
+                                            clr_addr_d = slv_aw_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB] + 1;
+                                            clr_len_d  = aw_res_len - 1;
+                                            clr_id_d   = slv_aw_id_i;
+                                            aw_wait_d  = ~mst_aw_ready;
+                                            aw_state_d = AW_BURST;
+                                        end
+                                        else if (!mst_aw_ready) begin
                                             aw_state_d = AW_WAIT;
                                         end
                                     end
@@ -756,6 +795,24 @@ module axi_riscv_lrsc #(
                 slv_aw_ready_o = mst_aw_ready;
                 if (mst_aw_ready) begin
                     aw_state_d = AW_IDLE;
+                end
+            end
+
+            AW_BURST: begin
+                mst_aw_valid = aw_wait_q;
+                aw_wait_d    = aw_wait_q & ~mst_aw_ready;
+                // Make sure no exclusive AR to the same address is currently waiting.
+                if (!(slv_ar_valid_i && slv_ar_lock_i &&
+                        slv_ar_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB] == clr_addr_q)) begin
+                    // Check reservation and clear identical addresses.
+                    art_check_clr_addr = clr_addr_q;
+                    art_check_clr_req  = 1'b1;
+                    if (clr_len_q == 1'b0) begin
+                        aw_state_d = aw_wait_d ? AW_WAIT : AW_IDLE;
+                    end else begin
+                        clr_addr_d = clr_addr_q + 1;
+                        clr_len_d  = clr_len_q - 1;
+                    end
                 end
             end
 
@@ -948,7 +1005,9 @@ module axi_riscv_lrsc #(
 
     // AXI Reservation Table
 
-    assign art_check_id = AXI_USER_AS_ID ?
+    assign art_check_id = (aw_state_q == AW_BURST) ?
+            clr_id_q
+            : AXI_USER_AS_ID ?
             slv_aw_user_i[AXI_USER_ID_MSB:AXI_USER_ID_LSB]
             : slv_aw_id_i;
     assign art_set_id = AXI_USER_AS_ID ?
@@ -978,10 +1037,16 @@ module axi_riscv_lrsc #(
             ar_state_q = AR_IDLE;
             aw_state_q = AW_IDLE;
             b_state_q  = B_NORMAL;
+            clr_addr_q = '0;
+            clr_len_q  = '0;
+            clr_id_q   = '0;
         end else begin
             ar_state_q = ar_state_d;
             aw_state_q = aw_state_d;
             b_state_q  = b_state_d;
+            clr_addr_q = clr_addr_d;
+            clr_len_q  = clr_len_d;
+            clr_id_q   = clr_id_d;
         end
     end
 
