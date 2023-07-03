@@ -34,6 +34,8 @@ module axi_riscv_atomics
     parameter int unsigned AXI_USER_ID_MSB = 0,
     // LSB of the ID in the user signal
     parameter int unsigned AXI_USER_ID_LSB = 0,
+    // LSB of the AXI address for reservations (determines the reservation granularity)
+    parameter int unsigned AXI_ADDR_LSB = $clog2(AXI_DATA_WIDTH/8),
     // Word width of the widest RISC-V processor that can issue requests to this module.
     // 32 for RV32; 64 for RV64, where both 32-bit (.W suffix) and 64-bit (.D suffix) AMOs are
     // supported if `aw_strb` is set correctly.
@@ -485,7 +487,8 @@ module axi_riscv_atomics
         .AXI_MAX_WRITE_TXNS (AXI_MAX_WRITE_TXNS),
         .AXI_USER_AS_ID     (AXI_USER_AS_ID),
         .AXI_USER_ID_MSB    (AXI_USER_ID_MSB),
-        .AXI_USER_ID_LSB    (AXI_USER_ID_LSB)
+        .AXI_USER_ID_LSB    (AXI_USER_ID_LSB),
+        .AXI_ADDR_LSB       (AXI_ADDR_LSB)
     ) i_lrsc (
         .clk_i              ( clk_i                 ),
         .rst_ni             ( rst_ni                ),
