@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](http://semver.org).
 
+## 0.8.0 - 2023-07-03
+
+### Added
+- `axi_riscv_lrsc`: Add support for AXI write bursts onto memory regions that may have reservations.
+- `axi_riscv_lrsc`: Add capability to specify the reservation granularity.
+
+
 ## 0.7.0 - 2023-03-24
 
 ### Added
