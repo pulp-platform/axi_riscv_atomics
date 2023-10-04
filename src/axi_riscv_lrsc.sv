@@ -330,7 +330,8 @@ module axi_riscv_lrsc #(
     id_queue #(
         .ID_WIDTH   (AXI_ID_WIDTH),
         .CAPACITY   (AXI_MAX_READ_TXNS),
-        .data_t     (r_flight_t)
+        .data_t     (r_flight_t),
+        .FULL_BW    (1'b1)
     ) i_read_in_flight_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
@@ -513,7 +514,8 @@ module axi_riscv_lrsc #(
     id_queue #(
         .ID_WIDTH   (AXI_ID_WIDTH),
         .CAPACITY   (AXI_MAX_WRITE_TXNS),
-        .data_t     (b_cmd_flat_t)
+        .data_t     (b_cmd_flat_t),
+        .FULL_BW    (1'b1)
     ) i_b_status_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
@@ -539,7 +541,8 @@ module axi_riscv_lrsc #(
     id_queue #(
         .ID_WIDTH   (AXI_ID_WIDTH),
         .CAPACITY   (AXI_MAX_WRITE_TXNS),
-        .data_t     (w_flight_t)
+        .data_t     (w_flight_t),
+        .FULL_BW    (1'b1)
     ) i_write_in_flight_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
