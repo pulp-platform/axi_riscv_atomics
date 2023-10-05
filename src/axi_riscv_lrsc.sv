@@ -810,11 +810,10 @@ module axi_riscv_lrsc #(
                     // Check reservation and clear identical addresses.
                     art_check_clr_addr = clr_addr_q;
                     art_check_clr_req  = 1'b1;
-                    if (clr_len_q == 1'b0) begin
+                    clr_addr_d         = clr_addr_q + 1;
+                    clr_len_d          = clr_len_q - 1;
+                    if (clr_len_q == 'd1) begin
                         aw_state_d = aw_wait_d ? AW_WAIT : AW_IDLE;
-                    end else begin
-                        clr_addr_d = clr_addr_q + 1;
-                        clr_len_d  = clr_len_q - 1;
                     end
                 end
             end
