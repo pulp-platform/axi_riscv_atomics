@@ -42,6 +42,8 @@ module axi_riscv_atomics
     parameter int unsigned RISCV_WORD_WIDTH = 0,
     // Add a cut between axi_riscv_amos and axi_riscv_lrsc
     parameter int unsigned N_AXI_CUT = 0,
+    /// Enable full bandwidth in LRSC ID queues
+    parameter bit FULL_BANDWIDTH = 1'b0,
     /// Derived Parameters (do NOT change manually!)
     localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8
 ) (
@@ -488,7 +490,8 @@ module axi_riscv_atomics
         .AXI_USER_AS_ID     (AXI_USER_AS_ID),
         .AXI_USER_ID_MSB    (AXI_USER_ID_MSB),
         .AXI_USER_ID_LSB    (AXI_USER_ID_LSB),
-        .AXI_ADDR_LSB       (AXI_ADDR_LSB)
+        .AXI_ADDR_LSB       (AXI_ADDR_LSB),
+        .FULL_BANDWIDTH     (FULL_BANDWIDTH)
     ) i_lrsc (
         .clk_i              ( clk_i                 ),
         .rst_ni             ( rst_ni                ),

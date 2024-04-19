@@ -44,6 +44,8 @@ module axi_riscv_lrsc #(
     parameter int unsigned AXI_ADDR_LSB = $clog2(AXI_DATA_WIDTH/8), // log2 of granularity for reservations (ignored LSBs)
     /// Enable debug prints (not synthesizable).
     parameter bit DEBUG = 1'b0,
+    /// Enable full bandwidth in ID queues
+    parameter bit FULL_BANDWIDTH = 1'b0,
     /// Derived Parameters (do NOT change manually!)
     localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8
 ) (
@@ -331,7 +333,7 @@ module axi_riscv_lrsc #(
         .ID_WIDTH   (AXI_ID_WIDTH),
         .CAPACITY   (AXI_MAX_READ_TXNS),
         .data_t     (r_flight_t),
-        .FULL_BW    (1'b1)
+        .FULL_BW    (FULL_BANDWIDTH)
     ) i_read_in_flight_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
@@ -515,7 +517,7 @@ module axi_riscv_lrsc #(
         .ID_WIDTH   (AXI_ID_WIDTH),
         .CAPACITY   (AXI_MAX_WRITE_TXNS),
         .data_t     (b_cmd_flat_t),
-        .FULL_BW    (1'b1)
+        .FULL_BW    (FULL_BANDWIDTH)
     ) i_b_status_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
@@ -542,7 +544,7 @@ module axi_riscv_lrsc #(
         .ID_WIDTH   (AXI_ID_WIDTH),
         .CAPACITY   (AXI_MAX_WRITE_TXNS),
         .data_t     (w_flight_t),
-        .FULL_BW    (1'b1)
+        .FULL_BW    (FULL_BANDWIDTH)
     ) i_write_in_flight_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
