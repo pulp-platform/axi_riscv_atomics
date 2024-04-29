@@ -1036,21 +1036,21 @@ module axi_riscv_lrsc #(
     // Registers
     always_ff @(posedge clk_i, negedge rst_ni) begin
         if (~rst_ni) begin
-            ar_state_q = AR_IDLE;
-            aw_state_q = AW_IDLE;
-            b_state_q  = B_NORMAL;
-            clr_addr_q = '0;
-            clr_len_q  = '0;
-            clr_id_q   = '0;
-            aw_wait_q  = '0;
+            ar_state_q <= AR_IDLE;
+            aw_state_q <= AW_IDLE;
+            b_state_q  <= B_NORMAL;
+            clr_addr_q <= '0;
+            clr_len_q  <= '0;
+            clr_id_q   <= '0;
+            aw_wait_q  <= '0;
         end else begin
-            ar_state_q = ar_state_d;
-            aw_state_q = aw_state_d;
-            b_state_q  = b_state_d;
-            clr_addr_q = clr_addr_d;
-            clr_len_q  = clr_len_d;
-            clr_id_q   = clr_id_d;
-            aw_wait_q  = aw_wait_d;
+            ar_state_q <= ar_state_d;
+            aw_state_q <= aw_state_d;
+            b_state_q  <= b_state_d;
+            clr_addr_q <= clr_addr_d;
+            clr_len_q  <= clr_len_d;
+            clr_id_q   <= clr_id_d;
+            aw_wait_q  <= aw_wait_d;
         end
     end
 
