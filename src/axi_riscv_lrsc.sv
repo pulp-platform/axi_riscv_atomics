@@ -515,7 +515,8 @@ module axi_riscv_lrsc #(
         .ID_WIDTH   (AXI_ID_WIDTH),
         .CAPACITY   (AXI_MAX_WRITE_TXNS),
         .data_t     (b_cmd_flat_t),
-        .FULL_BW    (1'b1)
+        .FULL_BW    (1'b1),
+        .CUT_OUP_POP_INP_GNT (1'b1)
     ) i_b_status_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
