@@ -45,7 +45,7 @@ module axi_riscv_lrsc #(
     /// Enable debug prints (not synthesizable).
     parameter bit DEBUG = 1'b0,
     /// Enable full bandwidth in ID queues
-    parameter bit FULL_BANDWIDTH = 1'b0,
+    parameter bit FULL_BANDWIDTH = 1'b1,
     /// Derived Parameters (do NOT change manually!)
     localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8
 ) (

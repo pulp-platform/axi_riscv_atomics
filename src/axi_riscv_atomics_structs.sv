@@ -31,7 +31,7 @@ module axi_riscv_atomics_structs #(
   parameter int unsigned  RiscvWordWidth  = 0,
   parameter int unsigned  NAxiCuts        = 0,
   parameter int unsigned  AxiAddrLSB      = $clog2(AxiDataWidth/8),
-  parameter bit           FullBandwidth   = 0,
+  parameter bit           FullBandwidth   = 1,
   parameter type          axi_req_t       = logic,
   parameter type          axi_rsp_t       = logic
 ) (

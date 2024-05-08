@@ -31,7 +31,7 @@ module axi_riscv_lrsc_wrap #(
     parameter int unsigned AXI_USER_ID_LSB = 0,    // LSB of the ID in the user signal
     parameter int unsigned AXI_ADDR_LSB = $clog2(AXI_DATA_WIDTH/8), // log2 of granularity for reservations (ignored LSBs)
     /// Enable full bandwidth in LRSC ID queues
-    parameter bit FULL_BANDWIDTH = 1'b0,
+    parameter bit FULL_BANDWIDTH = 1'b1,
     /// Enable debug prints (not synthesizable).
     parameter bit DEBUG = 1'b0,
     /// Derived Parameters (do NOT change manually!)
