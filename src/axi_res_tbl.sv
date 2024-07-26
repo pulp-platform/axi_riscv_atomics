@@ -33,7 +33,10 @@ module axi_res_tbl #(
     // Declarations of Signals and Types
     logic [N_IDS-1:0][AXI_ADDR_WIDTH-1:0]   tbl_d,                      tbl_q;
     logic                                   clr,
-                                            set;
+                                            set,
+                                            match;
+
+    assign match = (tbl_q[check_id_i] == check_clr_addr_i);
 
     generate for (genvar i = 0; i < N_IDS; ++i) begin: gen_tbl
         always_comb begin
@@ -55,7 +58,6 @@ module axi_res_tbl #(
         check_clr_gnt_o = 1'b0;
 
         if (check_clr_req_i) begin
-            automatic logic match = (tbl_q[check_id_i] == check_clr_addr_i);
             check_clr_gnt_o = 1'b1;
             check_res_o     = match;
             clr             = !(check_clr_excl_i && !match);
