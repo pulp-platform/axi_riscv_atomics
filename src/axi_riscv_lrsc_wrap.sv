@@ -32,6 +32,8 @@ module axi_riscv_lrsc_wrap #(
     parameter int unsigned AXI_ADDR_LSB = $clog2(AXI_DATA_WIDTH/8), // log2 of granularity for reservations (ignored LSBs)
     /// Enable full bandwidth in LRSC ID queues
     parameter bit FULL_BANDWIDTH = 1'b1,
+    /// Cut combinational path between input and output in LRSC ID queues with full bandwidth
+    parameter bit CUT_OUP_POP_INP_GNT = 1'b0,
     /// Enable debug prints (not synthesizable).
     parameter bit DEBUG = 1'b0,
     /// Derived Parameters (do NOT change manually!)
@@ -57,6 +59,7 @@ module axi_riscv_lrsc_wrap #(
         .AXI_USER_ID_LSB        (AXI_USER_ID_LSB),
         .AXI_ADDR_LSB           (AXI_ADDR_LSB),
         .FULL_BANDWIDTH         (FULL_BANDWIDTH),
+        .CUT_OUP_POP_INP_GNT    (CUT_OUP_POP_INP_GNT),
         .DEBUG                  (DEBUG)
     ) i_lrsc (
         .clk_i           ( clk_i         ),
