@@ -46,6 +46,8 @@ module axi_riscv_lrsc #(
     parameter bit DEBUG = 1'b0,
     /// Enable full bandwidth in ID queues
     parameter bit FULL_BANDWIDTH = 1'b1,
+    /// Cut combinational path between input and output in ID queues with full bandwidth
+    parameter bit CUT_OUP_POP_INP_GNT = 1'b0,
     /// Derived Parameters (do NOT change manually!)
     localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8
 ) (
@@ -330,10 +332,11 @@ module axi_riscv_lrsc #(
 
     // IQ Queue to track in-flight reads
     id_queue #(
-        .ID_WIDTH   (AXI_ID_WIDTH),
-        .CAPACITY   (AXI_MAX_READ_TXNS),
-        .data_t     (r_flight_t),
-        .FULL_BW    (FULL_BANDWIDTH)
+        .ID_WIDTH            (AXI_ID_WIDTH),
+        .CAPACITY            (AXI_MAX_READ_TXNS),
+        .data_t              (r_flight_t),
+        .FULL_BW             (FULL_BANDWIDTH),
+        .CUT_OUP_POP_INP_GNT (CUT_OUP_POP_INP_GNT)
     ) i_read_in_flight_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
@@ -514,10 +517,11 @@ module axi_riscv_lrsc #(
     b_cmd_flat_t b_status_inp_cmd_flat, b_status_oup_cmd_flat;
     assign b_status_inp_cmd_flat = b_cmd_flat_t'(b_status_inp_cmd);
     id_queue #(
-        .ID_WIDTH   (AXI_ID_WIDTH),
-        .CAPACITY   (AXI_MAX_WRITE_TXNS),
-        .data_t     (b_cmd_flat_t),
-        .FULL_BW    (FULL_BANDWIDTH)
+        .ID_WIDTH            (AXI_ID_WIDTH),
+        .CAPACITY            (AXI_MAX_WRITE_TXNS),
+        .data_t              (b_cmd_flat_t),
+        .FULL_BW             (FULL_BANDWIDTH),
+        .CUT_OUP_POP_INP_GNT (CUT_OUP_POP_INP_GNT)
     ) i_b_status_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
@@ -541,10 +545,11 @@ module axi_riscv_lrsc #(
 
     // ID Queue to track in-flight writes.
     id_queue #(
-        .ID_WIDTH   (AXI_ID_WIDTH),
-        .CAPACITY   (AXI_MAX_WRITE_TXNS),
-        .data_t     (w_flight_t),
-        .FULL_BW    (FULL_BANDWIDTH)
+        .ID_WIDTH            (AXI_ID_WIDTH),
+        .CAPACITY            (AXI_MAX_WRITE_TXNS),
+        .data_t              (w_flight_t),
+        .FULL_BW             (FULL_BANDWIDTH),
+        .CUT_OUP_POP_INP_GNT (CUT_OUP_POP_INP_GNT)
     ) i_write_in_flight_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
