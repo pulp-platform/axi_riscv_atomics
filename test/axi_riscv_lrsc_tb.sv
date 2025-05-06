@@ -22,7 +22,7 @@ module axi_riscv_lrsc_tb #(
     parameter int unsigned AXI_MAX_READ_TXNS = 16,
     parameter int unsigned AXI_MAX_WRITE_TXNS = 16,
     parameter int unsigned AXI_ADDR_LSB = 3,
-    parameter int unsigned NUM_RESERVATIONS = 10,
+    parameter int unsigned NUM_RESERVATIONS = 16,
     parameter bit DEBUG = 1'b0,
     // TB Parameters
     parameter int unsigned REQ_MIN_WAIT_CYCLES = 0,
