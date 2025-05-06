@@ -48,6 +48,8 @@ module axi_riscv_lrsc #(
     parameter bit FULL_BANDWIDTH = 1'b1,
     /// Cut combinational path between input and output in ID queues with full bandwidth
     parameter bit CUT_OUP_POP_INP_GNT = 1'b0,
+    /// Number of simultaineous reservations (<= 2^AXI_ID_WIDTH or <= 2^(AXI_USER_ID_MSB - AXI_USER_ID_LSB + 1))
+    parameter int unsigned NUM_RESERVATIONS = 2**AXI_ID_WIDTH,
     /// Derived Parameters (do NOT change manually!)
     localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8
 ) (
@@ -1024,7 +1026,8 @@ module axi_riscv_lrsc #(
             : slv_ar_id_i;
     axi_res_tbl #(
         .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH-AXI_ADDR_LSB), // Track reservations with given granularity.
-        .AXI_ID_WIDTH   (RES_ID_WIDTH)
+        .AXI_ID_WIDTH   (RES_ID_WIDTH),
+        .NUM_RESERVATIONS (NUM_RESERVATIONS)
     ) i_art (
         .clk_i                  (clk_i),
         .rst_ni                 (rst_ni),
