@@ -106,7 +106,7 @@ module axi_res_tbl #(
             tbl_id_d = tbl_id_q;
             matching_set = 1'b0;
             if (set) begin
-                for (genvar i = 0; i < NUM_RESERVATIONS; ++i) begin
+                for (int i = 0; i < NUM_RESERVATIONS; ++i) begin
                     if (set_id_i == tbl_id_q[i]) begin
                         tbl_d[i] = set_addr_i;
                         plru_used[i] = 1'b1;
@@ -114,7 +114,7 @@ module axi_res_tbl #(
                         break;
                     end
                 end
-                for (genvar i = 0; i < NUM_RESERVATIONS; ++i) begin
+                for (int i = 0; i < NUM_RESERVATIONS; ++i) begin
                     if (i == plru_evict && !matching_set) begin
                         tbl_d[i] = set_addr_i;
                         tbl_id_d[i] = set_id_i;
@@ -122,7 +122,7 @@ module axi_res_tbl #(
                     end
                 end
             end else if (clr) begin
-                for (genvar i = 0; i < NUM_RESERVATIONS; ++i) begin
+                for (int i = 0; i < NUM_RESERVATIONS; ++i) begin
                     if (tbl_q[i] == check_clr_addr_i) begin
                         tbl_d[i] = '0;
                     end
