@@ -47,7 +47,9 @@ module axi_riscv_atomics
     /// Cut combinational path between input and output in LRSC ID queues with full bandwidth
     parameter bit CUT_OUP_POP_INP_GNT = 1'b0,
     /// Number of simultaineous LRSC reservations (power of 2, <= 2^AXI_ID_WIDTH or <= 2^(AXI_USER_ID_MSB - AXI_USER_ID_LSB + 1))
-    parameter int unsigned NUM_RESERVATIONS = 2**AXI_ID_WIDTH,
+    parameter int unsigned NUM_RESERVATIONS = 2**(AXI_USER_AS_ID ?
+            AXI_USER_ID_MSB - AXI_USER_ID_LSB + 1
+            : AXI_ID_WIDTH),
     /// Derived Parameters (do NOT change manually!)
     localparam int unsigned AXI_STRB_WIDTH = AXI_DATA_WIDTH / 8
 ) (

@@ -33,7 +33,9 @@ module axi_riscv_atomics_structs #(
   parameter int unsigned  AxiAddrLSB      = $clog2(AxiDataWidth/8),
   parameter bit           FullBandwidth   = 1,
   parameter bit           CutOupPopInpGnt = 0,
-  parameter int unsigned  NumReservations = 2**AXI_ID_WIDTH,
+  parameter int unsigned  NumReservations = 2**(AxiUserAsId ?
+            AxiUserIdMsb - AxiUserIdLsb + 1
+            : AxiIdWidth),
 
   parameter type          axi_req_t       = logic,
   parameter type          axi_rsp_t       = logic
