@@ -34,7 +34,7 @@ module axi_riscv_lrsc_wrap #(
     parameter bit FULL_BANDWIDTH = 1'b1,
     /// Cut combinational path between input and output in LRSC ID queues with full bandwidth
     parameter bit CUT_OUP_POP_INP_GNT = 1'b0,
-    /// Number of simultaineous reservations (<= 2^AXI_ID_WIDTH or <= 2^(AXI_USER_ID_MSB - AXI_USER_ID_LSB + 1))
+    /// Number of simultaineous reservations (power of 2, <= 2^AXI_ID_WIDTH or <= 2^(AXI_USER_ID_MSB - AXI_USER_ID_LSB + 1))
     parameter int unsigned NUM_RESERVATIONS = 2**AXI_ID_WIDTH,
     /// Enable debug prints (not synthesizable).
     parameter bit DEBUG = 1'b0,
