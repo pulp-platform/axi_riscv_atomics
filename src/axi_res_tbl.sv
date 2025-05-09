@@ -31,7 +31,7 @@ module axi_res_tbl #(
 
     localparam integer N_IDS = 2**AXI_ID_WIDTH;
 
-    if (N_IDS == NUM_RESERVATIONS) begin : gen_standard_table
+    if (N_IDS <= NUM_RESERVATIONS) begin : gen_standard_table
         // Declarations of Signals and Types
         logic [N_IDS-1:0][AXI_ADDR_WIDTH-1:0]   tbl_d,                      tbl_q;
         logic                                   clr,
@@ -172,8 +172,6 @@ module axi_res_tbl #(
             else $fatal(1, "AXI_ADDR_WIDTH must be greater than 0!");
         assert (AXI_ID_WIDTH > 0)
             else $fatal(1, "AXI_ID_WIDTH must be greater than 0!");
-        assert (NUM_RESERVATIONS <= N_IDS)
-            else $fatal(1, "NUM_RESERVATIONS must be less than or equal to N_IDS!");
     end
 `endif
 // pragma translate_on
