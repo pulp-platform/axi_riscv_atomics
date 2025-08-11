@@ -25,7 +25,7 @@ stages:
     - bender script vsim -t test > compile.tcl
     - $VSIM -c -quiet -do 'source compile.tcl; quit'
     - $VSIM -c $TOPLEVEL -do "run -all"
-    - (! grep -n "Error:" transcript)
+    - (! grep -n -E "Error:|Fatal:" transcript)
 
 tests:
   extends: .test-tpl
