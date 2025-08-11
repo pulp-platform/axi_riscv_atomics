@@ -27,6 +27,8 @@
 //
 // Maintainer: Andreas Kurth <akurth@iis.ee.ethz.ch>
 
+`include "axi/typedef.svh"
+
 module axi_riscv_lrsc #(
     /// Exclusively-accessible address range (closed interval from ADDR_BEGIN to ADDR_END)
     parameter longint unsigned ADDR_BEGIN = 0,
@@ -161,935 +163,164 @@ module axi_riscv_lrsc #(
     input  logic                        mst_b_valid_i
 );
 
-    // Declarations of Signals and Types
-    localparam int unsigned RES_ID_WIDTH = AXI_USER_AS_ID ?
-            AXI_USER_ID_MSB - AXI_USER_ID_LSB + 1
-            : AXI_ID_WIDTH;
-
     typedef logic [AXI_ADDR_WIDTH-1:0]               axi_addr_t;
     typedef logic [AXI_DATA_WIDTH-1:0]               axi_data_t;
+    typedef logic [AXI_DATA_WIDTH/8-1:0]             axi_strobe_t;
     typedef logic [AXI_ID_WIDTH-1:0]                 axi_id_t;
-    typedef logic [1:0]                              axi_resp_t;
     typedef logic [AXI_USER_WIDTH-1:0]               axi_user_t;
-    typedef logic [AXI_ADDR_WIDTH-AXI_ADDR_LSB-1:0]  res_addr_t; // Track reservations with given granularity.
-    typedef logic [RES_ID_WIDTH-1:0]                 res_id_t;
 
-    typedef enum logic [1:0] {
-        B_REGULAR='0, B_EXCLUSIVE, B_INJECT
-    } b_cmd_t;
+    `AXI_TYPEDEF_ALL(axi, axi_addr_t, axi_id_t, axi_data_t, axi_strobe_t, axi_user_t)
 
-    typedef struct packed {
-        axi_id_t    id;
-        axi_user_t  user;
-    } b_inj_t;
+    // Bundle structs
+    axi_req_t  slv_req,  mst_req;
+    axi_resp_t slv_resp, mst_resp;
 
-    typedef struct packed {
-        axi_id_t    id;
-        axi_user_t  user;
-        axi_resp_t  resp;
-    } b_chan_t;
-
-    typedef struct packed {
-        axi_id_t    id;
-        axi_data_t  data;
-        axi_resp_t  resp;
-        axi_user_t  user;
-        logic       last;
-    } r_chan_t;
-
-    typedef struct packed {
-        logic   excl;
-    } r_flight_t;
-
-    typedef struct packed {
-        logic       forward;
-        axi_id_t    id;
-        axi_user_t  user;
-    } w_cmd_t;
-
-    typedef struct packed {
-        res_addr_t  addr;
-        logic       excl;
-    } w_flight_t;
-
-    typedef struct packed {
-        w_flight_t                      data;
-        logic [$bits(w_flight_t)-1:0]   mask;
-    } wifq_exists_t;
-
-    typedef enum logic {
-        AR_IDLE, AR_WAIT
-    } ar_state_t;
-
-    typedef enum logic [1:0] {
-        AW_IDLE, AW_WAIT, AW_BURST
-    } aw_state_t;
-
-    typedef struct packed {
-        axi_addr_t  addr;
-        logic [2:0] prot;
-        logic [3:0] region;
-        logic [5:0] atop;
-        logic [7:0] len;
-        logic [2:0] size;
-        logic [1:0] burst;
-        logic [3:0] cache;
-        logic [3:0] qos;
-        axi_id_t    id;
-        axi_user_t  user;
-    } aw_chan_t;
-
-    typedef enum logic {
-        B_NORMAL, B_FORWARD
-    } b_state_t;
-
-    axi_id_t        b_status_inp_id,
-                    b_status_oup_id,
-                    rifq_oup_id;
-
-    res_addr_t      ar_push_addr,
-                    art_check_clr_addr;
-
-    res_id_t        art_set_id,
-                    art_check_id;
-
-    logic           ar_push_excl,
-                    ar_push_res;
-
-    logic           art_check_clr_excl;
-
-    logic           ar_push_valid,              ar_push_ready,
-                    art_check_clr_req,          art_check_clr_gnt,
-                    art_filter_valid,           art_filter_ready,
-                    art_set_req,                art_set_gnt;
-
-    logic           rifq_inp_req,               rifq_inp_gnt,
-                    rifq_oup_req,               rifq_oup_gnt,
-                    rifq_oup_pop,
-                    rifq_oup_data_valid;
-
-    r_flight_t      rifq_inp_data,
-                    rifq_oup_data;
-
-    logic           wifq_exists,
-                    ar_wifq_exists_req,         ar_wifq_exists_gnt,
-                    aw_wifq_exists_req,         aw_wifq_exists_gnt,
-                    wifq_exists_req,            wifq_exists_gnt,
-                                                wifq_inp_gnt,
-                    wifq_oup_req,               wifq_oup_gnt,
-                    wifq_oup_data_valid;
-
-    wifq_exists_t   ar_wifq_exists_inp,
-                    aw_wifq_exists_inp,
-                    wifq_exists_inp;
-
-    b_chan_t        slv_b;
-
-    logic           slv_b_valid,                slv_b_ready;
-
-    r_chan_t        slv_r;
-
-    logic           slv_r_valid,                slv_r_ready;
-
-    logic           mst_b_valid,                mst_b_ready;
-
-    w_cmd_t         w_cmd_inp,                  w_cmd_oup;
-
-    logic           w_cmd_push,                 w_cmd_pop,
-                    w_cmd_full,                 w_cmd_empty;
-
-    b_inj_t         b_inj_inp,                  b_inj_oup;
-
-    logic           b_inj_push,                 b_inj_pop,
-                    b_inj_full,                 b_inj_empty;
-
-    b_cmd_t         b_status_inp_cmd,           b_status_oup_cmd;
-
-    logic           b_status_inp_req,           b_status_oup_req,
-                    b_status_inp_gnt,           b_status_oup_gnt,
-                    b_status_oup_pop,
-                    b_status_oup_valid;
-
-    logic           art_check_res;
-
-    ar_state_t      ar_state_d,                 ar_state_q;
-
-    aw_state_t      aw_state_d,                 aw_state_q;
-
-    b_state_t       b_state_d,                  b_state_q;
-
-    aw_chan_t       slv_aw,                     mst_aw;
-
-    logic           mst_aw_valid,               mst_aw_ready;
-
-    res_addr_t      clr_addr_d,                 clr_addr_q;
-
-    res_id_t        clr_id_d,                   clr_id_q;
-
-    // 3 bits AxSIZE + 8 bits AxLEN - ignored LSBs
-    logic [10-AXI_ADDR_LSB:0] clr_len_d,        clr_len_q,
-                              aw_res_len;
-
-    logic           aw_wait_d,                  aw_wait_q;
-
-    // AR and R Channel
-
-    // IQ Queue to track in-flight reads
-    id_queue #(
-        .ID_WIDTH            (AXI_ID_WIDTH),
-        .CAPACITY            (AXI_MAX_READ_TXNS),
-        .data_t              (r_flight_t),
-        .FULL_BW             (FULL_BANDWIDTH),
-        .CUT_OUP_POP_INP_GNT (CUT_OUP_POP_INP_GNT)
-    ) i_read_in_flight_queue (
-        .clk_i              (clk_i),
-        .rst_ni             (rst_ni),
-        .inp_id_i           (slv_ar_id_i),
-        .inp_data_i         (rifq_inp_data),
-        .inp_req_i          (rifq_inp_req),
-        .inp_gnt_o          (rifq_inp_gnt),
-        .exists_data_i      (),
-        .exists_mask_i      (),
-        .exists_req_i       (1'b0),
-        .exists_o           (),
-        .exists_gnt_o       (),
-        .oup_id_i           (rifq_oup_id),
-        .oup_pop_i          (rifq_oup_pop),
-        .oup_req_i          (rifq_oup_req),
-        .oup_data_o         (rifq_oup_data),
-        .oup_data_valid_o   (rifq_oup_data_valid),
-        .oup_gnt_o          (rifq_oup_gnt)
-    );
-    assign rifq_inp_data.excl = ar_push_excl;
-
-    // Fork requests from AR into reservation table and queue of in-flight reads.
-    stream_fork #(
-        .N_OUP  (2)
-    ) i_ar_push_fork (
-        .clk_i      (clk_i),
-        .rst_ni     (rst_ni),
-        .valid_i    (ar_push_valid),
-        .ready_o    (ar_push_ready),
-        .valid_o    ({art_filter_valid, rifq_inp_req}),
-        .ready_i    ({art_filter_ready, rifq_inp_gnt})
-    );
-
-    stream_filter i_art_filter (
-        .valid_i    (art_filter_valid),
-        .ready_o    (art_filter_ready),
-        .drop_i     (!ar_push_res),
-        .valid_o    (art_set_req),
-        .ready_i    (art_set_gnt)
-    );
-
-    // Time-Invariant Signal Assignments
-    assign mst_ar_addr_o    = slv_ar_addr_i;
-    assign mst_ar_prot_o    = slv_ar_prot_i;
-    assign mst_ar_region_o  = slv_ar_region_i;
-    assign mst_ar_len_o     = slv_ar_len_i;
-    assign mst_ar_size_o    = slv_ar_size_i;
-    assign mst_ar_burst_o   = slv_ar_burst_i;
-    assign mst_ar_lock_o    = 1'b0;
-    assign mst_ar_cache_o   = slv_ar_cache_i;
-    assign mst_ar_qos_o     = slv_ar_qos_i;
-    assign mst_ar_id_o      = slv_ar_id_i;
-    assign mst_ar_user_o    = slv_ar_user_i;
-    assign slv_r.data       = mst_r_data_i;
-    assign slv_r.last       = mst_r_last_i;
-    assign slv_r.id         = mst_r_id_i;
-    assign slv_r.user       = mst_r_user_i;
-
-    // Control R Channel
+    // ---------- Pack unrolled SLV interface into structs ----------
     always_comb begin
-        mst_r_ready_o   = 1'b0;
-        slv_r.resp      = '0;
-        slv_r_valid     = 1'b0;
-        rifq_oup_id     = '0;
-        rifq_oup_pop    = 1'b0;
-        rifq_oup_req    = 1'b0;
-        if (mst_r_valid_i && slv_r_ready) begin
-            rifq_oup_id     = mst_r_id_i;
-            rifq_oup_pop    = mst_r_last_i;
-            rifq_oup_req    = 1'b1;
-            if (rifq_oup_gnt) begin
-                mst_r_ready_o = 1'b1;
-                if (mst_r_resp_i[1] == 1'b0) begin
-                    slv_r.resp = {1'b0, rifq_oup_data.excl};
-                end else begin
-                    slv_r.resp = mst_r_resp_i;
-                end
-                slv_r_valid = 1'b1;
-            end
-        end
+    slv_req.ar.addr   = slv_ar_addr_i;
+    slv_req.ar.prot   = slv_ar_prot_i;
+    slv_req.ar.region = slv_ar_region_i;
+    slv_req.ar.len    = slv_ar_len_i;
+    slv_req.ar.size   = slv_ar_size_i;
+    slv_req.ar.burst  = slv_ar_burst_i;
+    slv_req.ar.lock   = slv_ar_lock_i;
+    slv_req.ar.cache  = slv_ar_cache_i;
+    slv_req.ar.qos    = slv_ar_qos_i;
+    slv_req.ar.id     = slv_ar_id_i;
+    slv_req.ar.user   = slv_ar_user_i;
+    slv_req.ar_valid  = slv_ar_valid_i;
+
+    slv_req.aw.addr   = slv_aw_addr_i;
+    slv_req.aw.prot   = slv_aw_prot_i;
+    slv_req.aw.region = slv_aw_region_i;
+    slv_req.aw.atop   = slv_aw_atop_i;
+    slv_req.aw.len    = slv_aw_len_i;
+    slv_req.aw.size   = slv_aw_size_i;
+    slv_req.aw.burst  = slv_aw_burst_i;
+    slv_req.aw.lock   = slv_aw_lock_i;
+    slv_req.aw.cache  = slv_aw_cache_i;
+    slv_req.aw.qos    = slv_aw_qos_i;
+    slv_req.aw.id     = slv_aw_id_i;
+    slv_req.aw.user   = slv_aw_user_i;
+    slv_req.aw_valid  = slv_aw_valid_i;
+
+    slv_req.w.data    = slv_w_data_i;
+    slv_req.w.strb    = slv_w_strb_i;
+    slv_req.w.user    = slv_w_user_i;
+    slv_req.w.last    = slv_w_last_i;
+    slv_req.w_valid   = slv_w_valid_i;
+
+    slv_req.r_ready   = slv_r_ready_i;
+    slv_req.b_ready   = slv_b_ready_i;
     end
 
-// pragma translate_off
-    always @(posedge clk_i) begin
-        if (~rst_ni) begin
-            if (rifq_oup_req && rifq_oup_gnt) begin
-                assert (rifq_oup_data_valid) else $error("Unexpected R with ID %0x!", mst_r_id_i);
-            end
-        end
-    end
-// pragma translate_on
-
-    // Control AR Channel
+    // ---------- Unpack structs back to unrolled SLV outputs ----------
     always_comb begin
-        mst_ar_valid_o                  = 1'b0;
-        slv_ar_ready_o                  = 1'b0;
-        ar_push_addr                    = '0;
-        ar_push_excl                    = '0;
-        ar_push_res                     = '0;
-        ar_push_valid                   = 1'b0;
-        ar_wifq_exists_inp.data.addr    = '0;
-        ar_wifq_exists_inp.data.excl    = 1'b0;
-        ar_wifq_exists_inp.mask         = '1;
-        ar_wifq_exists_inp.mask[12:0]   = '0; // Don't care on `excl` bit and page offset.
-        ar_wifq_exists_req              = 1'b0;
-        ar_state_d                      = ar_state_q;
+        slv_ar_ready_o = slv_resp.ar_ready;
+        slv_aw_ready_o = slv_resp.aw_ready;
+        slv_w_ready_o  = slv_resp.w_ready;
 
-        case (ar_state_q)
+        slv_r_valid_o  = slv_resp.r_valid;
+        slv_r_data_o   = slv_resp.r.data;
+        slv_r_resp_o   = slv_resp.r.resp;
+        slv_r_last_o   = slv_resp.r.last;
+        slv_r_id_o     = slv_resp.r.id;
+        slv_r_user_o   = slv_resp.r.user;
 
-            AR_IDLE: begin
-                if (slv_ar_valid_i) begin
-                    ar_push_addr = slv_ar_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB];
-                    ar_push_excl = (slv_ar_addr_i >= ADDR_BEGIN && slv_ar_addr_i <= ADDR_END &&
-                            slv_ar_lock_i && slv_ar_len_i == 8'h00);
-                    if (ar_push_excl) begin
-                        ar_wifq_exists_inp.data.addr = slv_ar_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB];
-                        ar_wifq_exists_req = 1'b1;
-                        if (ar_wifq_exists_gnt) begin
-                            ar_push_res = !wifq_exists;
-                            ar_push_valid = 1'b1;
-                        end
-                    end else begin
-                        ar_push_res = 1'b0;
-                        ar_push_valid = 1'b1;
-                    end
-                    if (ar_push_ready) begin
-                        mst_ar_valid_o = 1'b1;
-                        if (mst_ar_ready_i) begin
-                            slv_ar_ready_o = 1'b1;
-                        end else begin
-                            ar_state_d = AR_WAIT;
-                        end
-                    end
-                end
-            end
-
-            AR_WAIT: begin
-                mst_ar_valid_o = slv_ar_valid_i;
-                slv_ar_ready_o = mst_ar_ready_i;
-                if (mst_ar_ready_i && mst_ar_valid_o) begin
-                    ar_state_d = AR_IDLE;
-                end
-            end
-
-            default: begin
-                ar_state_d = AR_IDLE;
-            end
-        endcase
+        slv_b_valid_o  = slv_resp.b_valid;
+        slv_b_resp_o   = slv_resp.b.resp;
+        slv_b_id_o     = slv_resp.b.id;
+        slv_b_user_o   = slv_resp.b.user;
     end
 
-    // AW, W and B Channel
-
-    // FIFO to track commands for W bursts.
-    fifo_v3 #(
-        .FALL_THROUGH   (1'b0), // There would be a combinatorial loop if this were a fall-through
-                                // register.  Optimizing this can reduce the latency of this module.
-        .dtype          (w_cmd_t),
-        .DEPTH          (AXI_MAX_WRITE_TXNS)
-    ) i_w_cmd_fifo (
-        .clk_i      (clk_i),
-        .rst_ni     (rst_ni),
-        .flush_i    (1'b0),
-        .testmode_i (1'b0),
-        .full_o     (w_cmd_full),
-        .empty_o    (w_cmd_empty),
-        .usage_o    (),
-        .data_i     (w_cmd_inp),
-        .push_i     (w_cmd_push),
-        .data_o     (w_cmd_oup),
-        .pop_i      (w_cmd_pop)
-    );
-
-    // ID Queue to track downstream W bursts and their pending B responses.
-    // Workaround for bug in Questa (at least 2018.07 is affected) and VCS (at least 2020.12 is
-    // affected):
-    // Flatten the enum into a logic vector before using that type when instantiating `id_queue`.
-    typedef logic [$bits(b_cmd_t)-1:0] b_cmd_flat_t;
-    b_cmd_flat_t b_status_inp_cmd_flat, b_status_oup_cmd_flat;
-    assign b_status_inp_cmd_flat = b_cmd_flat_t'(b_status_inp_cmd);
-    id_queue #(
-        .ID_WIDTH            (AXI_ID_WIDTH),
-        .CAPACITY            (AXI_MAX_WRITE_TXNS),
-        .data_t              (b_cmd_flat_t),
-        .FULL_BW             (FULL_BANDWIDTH),
-        .CUT_OUP_POP_INP_GNT (CUT_OUP_POP_INP_GNT)
-    ) i_b_status_queue (
-        .clk_i              (clk_i),
-        .rst_ni             (rst_ni),
-        .inp_id_i           (b_status_inp_id),
-        .inp_data_i         (b_status_inp_cmd_flat),
-        .inp_req_i          (b_status_inp_req),
-        .inp_gnt_o          (b_status_inp_gnt),
-        .exists_data_i      (),
-        .exists_mask_i      (),
-        .exists_req_i       (1'b0),
-        .exists_o           (),
-        .exists_gnt_o       (),
-        .oup_id_i           (b_status_oup_id),
-        .oup_pop_i          (b_status_oup_pop),
-        .oup_req_i          (b_status_oup_req),
-        .oup_data_o         (b_status_oup_cmd_flat),
-        .oup_data_valid_o   (b_status_oup_valid),
-        .oup_gnt_o          (b_status_oup_gnt)
-    );
-    assign b_status_oup_cmd = b_cmd_t'(b_status_oup_cmd_flat);
-
-    // ID Queue to track in-flight writes.
-    id_queue #(
-        .ID_WIDTH            (AXI_ID_WIDTH),
-        .CAPACITY            (AXI_MAX_WRITE_TXNS),
-        .data_t              (w_flight_t),
-        .FULL_BW             (FULL_BANDWIDTH),
-        .CUT_OUP_POP_INP_GNT (CUT_OUP_POP_INP_GNT)
-    ) i_write_in_flight_queue (
-        .clk_i              (clk_i),
-        .rst_ni             (rst_ni),
-        .inp_id_i           (mst_aw_id_o),
-        .inp_data_i         ({mst_aw_addr_o[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB], slv_aw_lock_i}),
-        .inp_req_i          (mst_aw_valid && mst_aw_ready),
-        .inp_gnt_o          (wifq_inp_gnt),
-        .exists_data_i      (wifq_exists_inp.data),
-        .exists_mask_i      (wifq_exists_inp.mask),
-        .exists_req_i       (wifq_exists_req),
-        .exists_o           (wifq_exists),
-        .exists_gnt_o       (wifq_exists_gnt),
-        .oup_id_i           (mst_b_id_i),
-        .oup_pop_i          (1'b1),
-        .oup_req_i          (wifq_oup_req),
-        .oup_data_o         (),
-        .oup_data_valid_o   (wifq_oup_data_valid),
-        .oup_gnt_o          (wifq_oup_gnt)
-    );
-
-// pragma translate_off
-    always @(posedge clk_i) begin
-        if (~rst_ni) begin
-            if (mst_aw_valid && mst_aw_ready) begin
-                assert (wifq_inp_gnt) else $error("Missed enqueuing of in-flight write!");
-            end
-            if (wifq_oup_req && wifq_oup_gnt) begin
-                assert (wifq_oup_data_valid) else $error("Unexpected B!");
-            end
-        end
-    end
-// pragma translate_on
-
-    stream_arbiter #(
-        .DATA_T (wifq_exists_t),
-        .N_INP  (2)
-    ) i_wifq_exists_arb (
-        .clk_i          (clk_i),
-        .rst_ni         (rst_ni),
-        .inp_data_i     ({ar_wifq_exists_inp,   aw_wifq_exists_inp}),
-        .inp_valid_i    ({ar_wifq_exists_req,   aw_wifq_exists_req}),
-        .inp_ready_o    ({ar_wifq_exists_gnt,   aw_wifq_exists_gnt}),
-        .oup_data_o     (wifq_exists_inp),
-        .oup_valid_o    (wifq_exists_req),
-        .oup_ready_i    (wifq_exists_gnt)
-    );
-
-    stream_fork #(
-        .N_OUP  (2)
-    ) i_mst_b_fork (
-        .clk_i      (clk_i),
-        .rst_ni     (rst_ni),
-        .valid_i    (mst_b_valid_i),
-        .ready_o    (mst_b_ready_o),
-        .valid_o    ({mst_b_valid, wifq_oup_req}),
-        .ready_i    ({mst_b_ready, wifq_oup_gnt})
-    );
-
-    // FIFO to track B responses that are to be injected.
-    fifo_v3 #(
-        .FALL_THROUGH   (1'b0),
-        .dtype          (b_inj_t),
-        .DEPTH          (AXI_MAX_WRITE_TXNS)
-    ) i_b_inj_fifo (
-        .clk_i      (clk_i),
-        .rst_ni     (rst_ni),
-        .flush_i    (1'b0),
-        .testmode_i (1'b0),
-        .full_o     (b_inj_full),
-        .empty_o    (b_inj_empty),
-        .usage_o    (),
-        .data_i     (b_inj_inp),
-        .push_i     (b_inj_push),
-        .data_o     (b_inj_oup),
-        .pop_i      (b_inj_pop)
-    );
-
-    // Fall-through register to hold AW transactin that passed
-    assign slv_aw = {slv_aw_addr_i,
-                     slv_aw_prot_i,
-                     slv_aw_region_i,
-                     slv_aw_atop_i,
-                     slv_aw_len_i,
-                     slv_aw_size_i,
-                     slv_aw_burst_i,
-                     slv_aw_cache_i,
-                     slv_aw_qos_i,
-                     slv_aw_id_i,
-                     slv_aw_user_i};
-    assign {mst_aw_addr_o,
-            mst_aw_prot_o,
-            mst_aw_region_o,
-            mst_aw_atop_o,
-            mst_aw_len_o,
-            mst_aw_size_o,
-            mst_aw_burst_o,
-            mst_aw_cache_o,
-            mst_aw_qos_o,
-            mst_aw_id_o,
-            mst_aw_user_o} = mst_aw;
-
-
-    fall_through_register #(
-        .T (aw_chan_t)
-    ) i_aw_trans_reg (
-        .clk_i       (clk_i),
-        .rst_ni      (rst_ni),
-        .clr_i       (1'b0),
-        .testmode_i  (1'b0),
-        // Input
-        .valid_i     (mst_aw_valid),
-        .ready_o     (mst_aw_ready),
-        .data_i      (slv_aw),
-        // Output
-        .valid_o     (mst_aw_valid_o),
-        .ready_i     (mst_aw_ready_i),
-        .data_o      (mst_aw)
-    );
-
-    // Time-Invariant Signal Assignments
-    assign mst_aw_lock_o    = 1'b0;
-    assign mst_w_data_o     = slv_w_data_i;
-    assign mst_w_strb_o     = slv_w_strb_i;
-    assign mst_w_user_o     = slv_w_user_i;
-    assign mst_w_last_o     = slv_w_last_i;
-
-    // Compute number of reservations written by this write transaction
+    // ---------- Unpack MST req bundle to unrolled MST outputs ----------
     always_comb begin
-        // AWSIZE == GRANULARITY: use burst length = AWLEN + 1
-        aw_res_len = slv_aw_len_i + 1;
-        // AWSIZE > GRANULARITY: clear beat-size / granularity reservations per beat
-        if (slv_aw_size_i > AXI_ADDR_LSB) begin
-            aw_res_len = (slv_aw_len_i + 1) << (slv_aw_size_i - AXI_ADDR_LSB);
-        end
-        // AWSIZE < GRANULARITY: clear one reservation for every granularity / beat-size beat
-        else if (slv_aw_size_i < AXI_ADDR_LSB) begin
-            aw_res_len = (slv_aw_len_i + 1) >> (AXI_ADDR_LSB - slv_aw_size_i);
-        end
+        mst_ar_addr_o   = mst_req.ar.addr;
+        mst_ar_prot_o   = mst_req.ar.prot;
+        mst_ar_region_o = mst_req.ar.region;
+        mst_ar_len_o    = mst_req.ar.len;
+        mst_ar_size_o   = mst_req.ar.size;
+        mst_ar_burst_o  = mst_req.ar.burst;
+        mst_ar_lock_o   = mst_req.ar.lock;
+        mst_ar_cache_o  = mst_req.ar.cache;
+        mst_ar_qos_o    = mst_req.ar.qos;
+        mst_ar_id_o     = mst_req.ar.id;
+        mst_ar_user_o   = mst_req.ar.user;
+        mst_ar_valid_o  = mst_req.ar_valid;
+
+        mst_aw_addr_o   = mst_req.aw.addr;
+        mst_aw_prot_o   = mst_req.aw.prot;
+        mst_aw_region_o = mst_req.aw.region;
+        mst_aw_atop_o   = mst_req.aw.atop;
+        mst_aw_len_o    = mst_req.aw.len;
+        mst_aw_size_o   = mst_req.aw.size;
+        mst_aw_burst_o  = mst_req.aw.burst;
+        mst_aw_lock_o   = mst_req.aw.lock;
+        mst_aw_cache_o  = mst_req.aw.cache;
+        mst_aw_qos_o    = mst_req.aw.qos;
+        mst_aw_id_o     = mst_req.aw.id;
+        mst_aw_user_o   = mst_req.aw.user;
+        mst_aw_valid_o  = mst_req.aw_valid;
+
+        mst_w_data_o    = mst_req.w.data;
+        mst_w_strb_o    = mst_req.w.strb;
+        mst_w_user_o    = mst_req.w.user;
+        mst_w_last_o    = mst_req.w.last;
+        mst_w_valid_o   = mst_req.w_valid;
+
+        mst_r_ready_o   = mst_req.r_ready;
+        mst_b_ready_o   = mst_req.b_ready;
     end
 
-    // Control AW Channel
+    // ---------- Pack unrolled MST inputs into mst_resp bundle ----------
     always_comb begin
-        mst_aw_valid            = 1'b0;
-        slv_aw_ready_o          = 1'b0;
-        art_check_clr_addr      = '0;
-        art_check_clr_excl      = '0;
-        art_check_clr_req       = 1'b0;
-        aw_wifq_exists_inp.data = '0;
-        aw_wifq_exists_inp.mask = '1;
-        aw_wifq_exists_req      = 1'b0;
-        b_status_inp_id         = '0;
-        b_status_inp_cmd        = B_REGULAR;
-        b_status_inp_req        = 1'b0;
-        w_cmd_inp               = '0;
-        w_cmd_push              = 1'b0;
-        aw_state_d              = aw_state_q;
-        clr_addr_d              = clr_addr_q;
-        clr_len_d               = clr_len_q;
-        clr_id_d                = clr_id_q;
-        aw_wait_d               = aw_wait_q;
+        mst_resp.ar_ready = mst_ar_ready_i;
+        mst_resp.aw_ready = mst_aw_ready_i;
+        mst_resp.w_ready  = mst_w_ready_i;
 
-        case (aw_state_q)
-            AW_IDLE: begin
-                if (slv_aw_valid_i && !w_cmd_full && b_status_inp_gnt && wifq_inp_gnt) begin
-                    // New AW and we are ready to handle it.
-                    if (slv_aw_addr_i >= ADDR_BEGIN && slv_aw_addr_i <= ADDR_END) begin
-                        // Inside exclusively-accessible range.
-                        // Make sure no exclusive AR to the same address is currently waiting.
-                        if (!(slv_ar_valid_i && slv_ar_lock_i &&
-                                slv_ar_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB] == slv_aw_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB])) begin
-                            // Make sure no exclusive write to the same address is currently in
-                            // flight.
-                            aw_wifq_exists_inp.data.addr = slv_aw_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB];
-                            aw_wifq_exists_inp.data.excl = 1'b1;
-                            // If this is a burst, check the entire page for exclusive writes in flight.
-                            if (slv_aw_len_i > 0) aw_wifq_exists_inp.mask[12:1] = '0;
-                            aw_wifq_exists_req = 1'b1;
-                            if (aw_wifq_exists_gnt && !wifq_exists) begin
-                                // Check reservation and clear identical addresses.
-                                art_check_clr_addr  = slv_aw_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB];
-                                art_check_clr_excl  = slv_aw_lock_i;
-                                if (mst_aw_ready) begin
-                                    art_check_clr_req = 1'b1;
-                                end
-                                if (art_check_clr_gnt) begin
-                                    if (slv_aw_lock_i && slv_aw_len_i == 8'h00) begin
-                                        // Exclusive access and no burst, so check reservation.
-                                        if (art_check_res) begin
-                                            // Reservation exists, so forward downstream.
-                                            mst_aw_valid   = 1'b1;
-                                            slv_aw_ready_o = mst_aw_ready;
-                                            if (!mst_aw_ready) begin
-                                                aw_state_d = AW_WAIT;
-                                            end
-                                        end else begin
-                                            // No reservation exists, so drop AW.
-                                            slv_aw_ready_o = 1'b1;
-                                        end
-                                        // Store command to forward or drop W burst.
-                                        w_cmd_inp = '{forward: art_check_res, id: slv_aw_id_i,
-                                                user: slv_aw_user_i};
-                                        w_cmd_push = 1'b1;
-                                        // Add B status for this ID (exclusive if there is a
-                                        // reservation, inject otherwise).
-                                        b_status_inp_cmd = art_check_res ? B_EXCLUSIVE : B_INJECT;
-                                    end else begin
-                                        // Non-exclusive access or burst, so forward downstream.
-                                        mst_aw_valid   = 1'b1;
-                                        slv_aw_ready_o = mst_aw_ready;
-                                        // Store command to forward W burst.
-                                        w_cmd_inp  = '{forward: 1'b1, id: '0, user: '0};
-                                        w_cmd_push = 1'b1;
-                                        // Track B response as regular-okay.
-                                        b_status_inp_cmd = B_REGULAR;
-                                        // Is this write longer than our reservation granularity?
-                                        if (aw_res_len > 1) begin
-                                            // latch start address and length of write (burst)
-                                            clr_addr_d = slv_aw_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB] + 1;
-                                            clr_len_d  = aw_res_len - 1;
-                                            clr_id_d   = slv_aw_id_i;
-                                            aw_wait_d  = ~mst_aw_ready;
-                                            aw_state_d = AW_BURST;
-                                        end
-                                        else if (!mst_aw_ready) begin
-                                            aw_state_d = AW_WAIT;
-                                        end
-                                    end
-                                    b_status_inp_id = slv_aw_id_i;
-                                    b_status_inp_req = 1'b1;
-                                end
-                            end
-                        end
-                    end else begin
-                        // Outside exclusively-accessible address range, so bypass any
-                        // modifications.
-                        mst_aw_valid   = 1'b1;
-                        slv_aw_ready_o = mst_aw_ready;
-                        if (mst_aw_ready) begin
-                            // Store command to forward W burst.
-                            w_cmd_inp = '{forward: 1'b1, id: '0, user: '0};
-                            w_cmd_push = 1'b1;
-                            // Track B response as regular-okay.
-                            b_status_inp_id  = slv_aw_id_i;
-                            b_status_inp_cmd = B_REGULAR;
-                            b_status_inp_req = 1'b1;
-                        end
-                    end
-                end
-            end
+        mst_resp.r_valid  = mst_r_valid_i;
+        mst_resp.r.data   = mst_r_data_i;
+        mst_resp.r.resp   = mst_r_resp_i;
+        mst_resp.r.last   = mst_r_last_i;
+        mst_resp.r.id     = mst_r_id_i;
+        mst_resp.r.user   = mst_r_user_i;
 
-            AW_WAIT: begin
-                mst_aw_valid   = 1'b1;
-                slv_aw_ready_o = mst_aw_ready;
-                if (mst_aw_ready) begin
-                    aw_state_d = AW_IDLE;
-                end
-            end
-
-            AW_BURST: begin
-                mst_aw_valid = aw_wait_q;
-                aw_wait_d    = aw_wait_q & ~mst_aw_ready;
-                // Make sure no exclusive AR to the same address is currently waiting.
-                if (!(slv_ar_valid_i && slv_ar_lock_i &&
-                        slv_ar_addr_i[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB] == clr_addr_q)) begin
-                    // Check reservation and clear identical addresses.
-                    art_check_clr_addr = clr_addr_q;
-                    art_check_clr_req  = 1'b1;
-                    clr_addr_d         = clr_addr_q + 1;
-                    clr_len_d          = clr_len_q - 1;
-                    if (clr_len_q == 'd1) begin
-                        aw_state_d = aw_wait_d ? AW_WAIT : AW_IDLE;
-                    end
-                end
-            end
-
-            default:
-                aw_state_d = AW_IDLE;
-        endcase
+        mst_resp.b_valid  = mst_b_valid_i;
+        mst_resp.b.resp   = mst_b_resp_i;
+        mst_resp.b.id     = mst_b_id_i;
+        mst_resp.b.user   = mst_b_user_i;
     end
 
-// pragma translate_off
-    if (DEBUG) begin
-        always @(posedge clk_i) begin
-            if (b_status_inp_req && b_status_inp_gnt) begin
-                $display("%0t: AW added %0x as %0d", $time, b_status_inp_id, b_status_inp_cmd);
-            end
-        end
-    end
-// pragma translate_on
-
-    // Control W Channel
-    always_comb begin
-        mst_w_valid_o   = 1'b0;
-        slv_w_ready_o   = 1'b0;
-        b_inj_inp       = '0;
-        b_inj_push      = 1'b0;
-        w_cmd_pop       = 1'b0;
-        if (slv_w_valid_i && !w_cmd_empty && !b_inj_full) begin
-            if (w_cmd_oup.forward) begin
-                // Forward
-                mst_w_valid_o = 1'b1;
-                slv_w_ready_o = mst_w_ready_i;
-            end else begin
-                // Drop
-                slv_w_ready_o = 1'b1;
-            end
-            if (slv_w_ready_o && slv_w_last_i) begin
-                w_cmd_pop = 1'b1;
-                if (!w_cmd_oup.forward) begin
-                    // Add command to inject B response.
-                    b_inj_inp = '{id: w_cmd_oup.id, user: w_cmd_oup.user};
-                    b_inj_push = 1'b1;
-                end
-            end
-        end
-    end
-
-// pragma translate_off
-    if (DEBUG) begin
-        always @(posedge clk_i) begin
-            if (b_inj_push) begin
-                $display("%0t: W added inject for %0x", $time, b_inj_inp.id);
-            end
-        end
-    end
-// pragma translate_on
-
-    // Control B Channel
-    always_comb begin
-        slv_b.id            = mst_b_id_i;
-        slv_b.resp          = mst_b_resp_i;
-        slv_b.user          = mst_b_user_i;
-        slv_b_valid         = 1'b0;
-        mst_b_ready         = 1'b0;
-        b_inj_pop           = 1'b0;
-        b_status_oup_id     = '0;
-        b_status_oup_req    = 1'b0;
-        b_state_d           = b_state_q;
-
-        case (b_state_q)
-            B_NORMAL: begin
-                if (!b_inj_empty) begin
-                    // There is a response to be injected ..
-                    b_status_oup_id = b_inj_oup.id;
-                    b_status_oup_req = 1'b1;
-                    if (b_status_oup_gnt && b_status_oup_valid) begin
-                        if (b_status_oup_cmd == B_INJECT) begin
-                            // .. and the next B for that ID is indeed an injection, so go ahead and
-                            // inject it.
-                            slv_b.id    = b_inj_oup.id;
-                            slv_b.resp  = axi_pkg::RESP_OKAY;
-                            slv_b.user  = b_inj_oup.user;
-                            slv_b_valid = 1'b1;
-                            b_inj_pop   = slv_b_ready;
-                        end else begin
-                            // .. but the next B for that ID is *not* an injection, so try to
-                            // forward a B.
-                            b_state_d = B_FORWARD;
-                        end
-                    end
-                end else if (mst_b_valid) begin
-                    // There is currently no response to be injected, so try to forward a B.
-                    b_status_oup_id = mst_b_id_i;
-                    b_status_oup_req = 1'b1;
-                    if (b_status_oup_gnt && b_status_oup_valid) begin
-                        if (mst_b_resp_i[1] == 1'b0) begin
-                            slv_b.resp = {1'b0, (b_status_oup_cmd == B_EXCLUSIVE)};
-                        end else begin
-                            slv_b.resp = mst_b_resp_i;
-                        end
-                        slv_b_valid = 1'b1;
-                        mst_b_ready = slv_b_ready;
-                    end
-                end
-            end
-
-            B_FORWARD: begin
-                if (mst_b_valid) begin
-                    b_status_oup_id = mst_b_id_i;
-                    b_status_oup_req = 1'b1;
-                    if (b_status_oup_gnt && b_status_oup_valid) begin
-                        if (mst_b_resp_i[1] == 1'b0) begin
-                            slv_b.resp = {1'b0, (b_status_oup_cmd == B_EXCLUSIVE)};
-                        end else begin
-                            slv_b.resp = mst_b_resp_i;
-                        end
-                        slv_b_valid = 1'b1;
-                        mst_b_ready = slv_b_ready;
-                        if (slv_b_ready) begin
-                            b_state_d = B_NORMAL;
-                        end
-                    end
-                end
-            end
-
-            default:
-                b_state_d = B_NORMAL;
-        endcase
-    end
-
-// pragma translate_off
-    always @(posedge clk_i) begin
-        if (b_status_oup_req && b_status_oup_gnt) begin
-            assert (b_status_oup_valid);
-            if ((b_state_q == B_NORMAL && b_inj_empty) || b_state_q == B_FORWARD) begin
-                assert (b_status_oup_cmd != B_INJECT);
-            end
-        end
-    end
-// pragma translate_on
-
-// pragma translate_off
-    if (DEBUG) begin
-        always @(posedge clk_i) begin
-            if (slv_b_valid && slv_b_ready) begin
-                if (mst_b_ready) begin
-                    $display("%0t: B forwarded %0x", $time, slv_b.id);
-                end else begin
-                    $display("%0t: B injected  %0x", $time, slv_b.id);
-                end
-            end
-        end
-    end
-// pragma translate_on
-
-    assign b_status_oup_pop = slv_b_valid && slv_b_ready;
-
-    // Register in front of slv_b to prevent changes by FSM while valid and not yet ready.
-    stream_register #(
-        .T  (b_chan_t)
-    ) slv_b_reg (
-        .clk_i      (clk_i),
-        .rst_ni     (rst_ni),
-        .clr_i      (1'b0),
-        .testmode_i (1'b0),
-
-        .valid_i    (slv_b_valid),
-        .ready_o    (slv_b_ready),
-        .data_i     (slv_b),
-
-        .valid_o    (slv_b_valid_o),
-        .ready_i    (slv_b_ready_i),
-        .data_o     ({slv_b_id_o, slv_b_user_o, slv_b_resp_o})
+    // ---------- LR/SC core (struct-based) ----------
+    axi_riscv_lrsc_structs #(
+        .ADDR_BEGIN            (ADDR_BEGIN),
+        .ADDR_END              (ADDR_END),
+        .AXI_ADDR_WIDTH        (AXI_ADDR_WIDTH),
+        .AXI_DATA_WIDTH        (AXI_DATA_WIDTH),
+        .AXI_ID_WIDTH          (AXI_ID_WIDTH),
+        .AXI_USER_WIDTH        (AXI_USER_WIDTH),
+        .AXI_MAX_READ_TXNS     (AXI_MAX_READ_TXNS),
+        .AXI_MAX_WRITE_TXNS    (AXI_MAX_WRITE_TXNS),
+        .AXI_USER_AS_ID        (AXI_USER_AS_ID),
+        .AXI_USER_ID_MSB       (AXI_USER_ID_MSB),
+        .AXI_USER_ID_LSB       (AXI_USER_ID_LSB),
+        .AXI_ADDR_LSB          (AXI_ADDR_LSB),
+        .DEBUG                 (DEBUG),
+        .FULL_BANDWIDTH        (FULL_BANDWIDTH),
+        .CUT_OUP_POP_INP_GNT   (CUT_OUP_POP_INP_GNT),
+        .NUM_RESERVATIONS      (NUM_RESERVATIONS),
+        .aw_chan_t             (axi_aw_chan_t),
+        .b_chan_t              (axi_b_chan_t),
+        .r_chan_t              (axi_r_chan_t),
+        .req_t                 (axi_req_t),
+        .resp_t                (axi_resp_t)
+    ) i_lrsc_structs (
+        .clk_i     (clk_i),
+        .rst_ni    (rst_ni),
+        .slv_req_i (slv_req),
+        .slv_resp_o(slv_resp),
+        .mst_req_o (mst_req),
+        .mst_resp_i(mst_resp)
     );
-
-    // Fall-through register in front of slv_r to remove mutual dependency.
-    spill_register #( // There would be a combinatorial loop if this were a fall-through register.
-                      // Optimizing this can reduce the latency of this module.
-        .T  (r_chan_t)
-    ) slv_r_reg (
-        .clk_i      (clk_i),
-        .rst_ni     (rst_ni),
-
-        .valid_i    (slv_r_valid),
-        .ready_o    (slv_r_ready),
-        .data_i     (slv_r),
-
-        .valid_o    (slv_r_valid_o),
-        .ready_i    (slv_r_ready_i),
-        .data_o     ({slv_r_id_o, slv_r_data_o, slv_r_resp_o, slv_r_user_o, slv_r_last_o})
-    );
-
-    // AXI Reservation Table
-
-    assign art_check_id = (aw_state_q == AW_BURST) ?
-            clr_id_q
-            : AXI_USER_AS_ID ?
-            slv_aw_user_i[AXI_USER_ID_MSB:AXI_USER_ID_LSB]
-            : slv_aw_id_i;
-    assign art_set_id = AXI_USER_AS_ID ?
-            slv_ar_user_i[AXI_USER_ID_MSB:AXI_USER_ID_LSB]
-            : slv_ar_id_i;
-    axi_res_tbl #(
-        .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH-AXI_ADDR_LSB), // Track reservations with given granularity.
-        .AXI_ID_WIDTH   (RES_ID_WIDTH),
-        .NUM_RESERVATIONS (NUM_RESERVATIONS)
-    ) i_art (
-        .clk_i                  (clk_i),
-        .rst_ni                 (rst_ni),
-        .check_clr_addr_i       (art_check_clr_addr),
-        .check_id_i             (art_check_id),
-        .check_clr_excl_i       (art_check_clr_excl),
-        .check_res_o            (art_check_res),
-        .check_clr_req_i        (art_check_clr_req),
-        .check_clr_gnt_o        (art_check_clr_gnt),
-        .set_addr_i             (ar_push_addr),
-        .set_id_i               (art_set_id),
-        .set_req_i              (art_set_req),
-        .set_gnt_o              (art_set_gnt)
-    );
-
-    // Registers
-    always_ff @(posedge clk_i, negedge rst_ni) begin
-        if (~rst_ni) begin
-            ar_state_q <= AR_IDLE;
-            aw_state_q <= AW_IDLE;
-            b_state_q  <= B_NORMAL;
-            clr_addr_q <= '0;
-            clr_len_q  <= '0;
-            clr_id_q   <= '0;
-            aw_wait_q  <= '0;
-        end else begin
-            ar_state_q <= ar_state_d;
-            aw_state_q <= aw_state_d;
-            b_state_q  <= b_state_d;
-            clr_addr_q <= clr_addr_d;
-            clr_len_q  <= clr_len_d;
-            clr_id_q   <= clr_id_d;
-            aw_wait_q  <= aw_wait_d;
-        end
-    end
-
-    // Validate parameters.
-// pragma translate_off
-`ifndef VERILATOR
-    initial begin: validate_params
-        assert (ADDR_END > ADDR_BEGIN)
-            else $fatal(1, "ADDR_END must be greater than ADDR_BEGIN!");
-        assert (AXI_ADDR_WIDTH > 0)
-            else $fatal(1, "AXI_ADDR_WIDTH must be greater than 0!");
-        assert (AXI_DATA_WIDTH > 0)
-            else $fatal(1, "AXI_DATA_WIDTH must be greater than 0!");
-        assert (AXI_ID_WIDTH > 0)
-            else $fatal(1, "AXI_ID_WIDTH must be greater than 0!");
-        assert (AXI_MAX_READ_TXNS > 0)
-            else $fatal(1, "AXI_MAX_READ_TXNS must be greater than 0!");
-        assert (AXI_MAX_WRITE_TXNS > 0)
-            else $fatal(1, "AXI_MAX_WRITE_TXNS must be greater than 0!");
-        if (AXI_USER_AS_ID) begin
-            assert (AXI_USER_ID_MSB >= AXI_USER_ID_LSB)
-                else $fatal(1, "AXI_USER_ID_MSB must be greater equal to AXI_USER_ID_LSB!");
-            assert (AXI_USER_WIDTH > AXI_USER_ID_MSB)
-                else $fatal(1, "AXI_USER_WIDTH must be greater than AXI_USER_ID_MSB!");
-        end
-    end
-`endif
-// pragma translate_on
 
 endmodule

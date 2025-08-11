@@ -16,8 +16,9 @@ sources:
   - src/axi_riscv_amos_alu.sv
   # Level 1
   - src/axi_riscv_amos.sv
-  - src/axi_riscv_lrsc.sv
+  - src/axi_riscv_lrsc_structs.sv
   # Level 2
+  - src/axi_riscv_lrsc.sv
   - src/axi_riscv_atomics.sv
   - src/axi_riscv_lrsc_wrap.sv
   # Level 3
