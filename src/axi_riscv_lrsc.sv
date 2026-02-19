@@ -354,7 +354,9 @@ module axi_riscv_lrsc #(
         .oup_req_i          (rifq_oup_req),
         .oup_data_o         (rifq_oup_data),
         .oup_data_valid_o   (rifq_oup_data_valid),
-        .oup_gnt_o          (rifq_oup_gnt)
+        .oup_gnt_o          (rifq_oup_gnt),
+        .full_o             (),
+        .empty_o            ()
     );
     assign rifq_inp_data.excl = ar_push_excl;
 
@@ -539,7 +541,9 @@ module axi_riscv_lrsc #(
         .oup_req_i          (b_status_oup_req),
         .oup_data_o         (b_status_oup_cmd_flat),
         .oup_data_valid_o   (b_status_oup_valid),
-        .oup_gnt_o          (b_status_oup_gnt)
+        .oup_gnt_o          (b_status_oup_gnt),
+        .full_o             (),
+        .empty_o            ()
     );
     assign b_status_oup_cmd = b_cmd_t'(b_status_oup_cmd_flat);
 
@@ -567,7 +571,9 @@ module axi_riscv_lrsc #(
         .oup_req_i          (wifq_oup_req),
         .oup_data_o         (),
         .oup_data_valid_o   (wifq_oup_data_valid),
-        .oup_gnt_o          (wifq_oup_gnt)
+        .oup_gnt_o          (wifq_oup_gnt),
+        .full_o             (),
+        .empty_o            ()
     );
 
 // pragma translate_off
