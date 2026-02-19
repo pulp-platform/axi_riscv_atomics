@@ -22,6 +22,7 @@ module axi_riscv_lrsc_tb #(
     parameter int unsigned AXI_MAX_READ_TXNS = 16,
     parameter int unsigned AXI_MAX_WRITE_TXNS = 16,
     parameter int unsigned AXI_ADDR_LSB = 3,
+    parameter int unsigned NUM_RESERVATIONS = 16,
     parameter bit DEBUG = 1'b0,
     // TB Parameters
     parameter int unsigned REQ_MIN_WAIT_CYCLES = 0,
@@ -100,7 +101,8 @@ module axi_riscv_lrsc_tb #(
         .AXI_MAX_READ_TXNS      (AXI_MAX_READ_TXNS),
         .AXI_MAX_WRITE_TXNS     (AXI_MAX_WRITE_TXNS),
         .AXI_ADDR_LSB           (AXI_ADDR_LSB),
-        .DEBUG                  (DEBUG)
+        .DEBUG                  (DEBUG),
+        .NUM_RESERVATIONS       (NUM_RESERVATIONS)
     ) dut (
         .clk_i  (clk),
         .rst_ni (rst_n),
