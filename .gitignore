@@ -1,6 +1,5 @@
 # Bender
 .bender/
-*.lock
 Bender.local
 # Build
 build/
