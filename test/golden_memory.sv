@@ -331,12 +331,11 @@ package golden_model_pkg;
         endtask : read
 
         // Linearization Functions
-        logic [RES_ID_WIDTH-1:0] default_id = 0; // Systemverilog requires a assignable default value (required to make this argument optional)
         task wait_write(
             input logic [AXI_ADDR_WIDTH-1:0] addr,
             input logic [2:0]                size,
             input logic [RES_ID_WIDTH-1:0]   id,
-            inout logic [RES_ID_WIDTH-1:0]   out_id=default_id
+            inout logic [RES_ID_WIDTH-1:0]   out_id
         );
             if (out_id) begin
                 // Wait for a transaction to be through the memory controller's buffers and return its ID
