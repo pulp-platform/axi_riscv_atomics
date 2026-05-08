@@ -122,6 +122,7 @@ module axi_res_tbl #(
                 for (int i = 0; i < NUM_RESERVATIONS; ++i) begin
                     if (!field_in_use_q[i] && !matching_set) begin
                         tbl_d[i] = set_addr_i;
+                        tbl_id_d[i] = set_id_i;
                         plru_used[i] = 1'b1;
                         matching_set = 1'b1;
                         field_in_use_d[i] = 1'b1;
