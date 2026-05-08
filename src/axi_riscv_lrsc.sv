@@ -362,7 +362,11 @@ module axi_riscv_lrsc #(
         .full_o             (),
         .empty_o            ()
     );
-    assign rifq_inp_data.excl = ar_push_excl;
+    // Record whether the reservation was *granted*, not merely attempted.
+    // When a conflicting write is in-flight ar_push_res=0 even though
+    // ar_push_excl=1; using ar_push_excl here would cause a spurious EXOKAY
+    // on the R response (AXI4 §C8.2 violation).
+    assign rifq_inp_data.excl = ar_push_res;
 
     // Fork requests from AR into reservation table and queue of in-flight reads.
     stream_fork #(
