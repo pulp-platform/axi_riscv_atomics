@@ -82,12 +82,12 @@ module axi_res_tbl #(
         logic [NUM_RESERVATIONS-1:0][AXI_ADDR_WIDTH-1:0]   tbl_d, tbl_q;
         logic clr, set, match, matching_set;
         logic [NUM_RESERVATIONS-1:0] plru_used, plru_evict_oh;
-        logic [cf_math_pkg::idx_width(NUM_RESERVATIONS)-1:0] plru_evict;
+        logic [cc_pkg::idx_width(NUM_RESERVATIONS)-1:0] plru_evict;
         logic [NUM_RESERVATIONS-1:0][AXI_ID_WIDTH-1:0] tbl_id_d, tbl_id_q;
         logic [NUM_RESERVATIONS-1:0] field_in_use_d, field_in_use_q;
 
-        plru_tree #(
-            .ENTRIES(NUM_RESERVATIONS)
+        cc_plru_tree #(
+            .Entries(NUM_RESERVATIONS)
         ) i_reservation_plru (
             .clk_i(clk_i),
             .rst_ni(rst_ni),
@@ -95,11 +95,11 @@ module axi_res_tbl #(
             .plru_o(plru_evict_oh)
         );
 
-        onehot_to_bin #(
-            .ONEHOT_WIDTH(NUM_RESERVATIONS)
+        cc_onehot_to_bin #(
+            .OnehotWidth(NUM_RESERVATIONS)
         ) i_reservation_plru_bin (
-            .onehot(plru_evict_oh),
-            .bin(plru_evict)
+            .onehot_i(plru_evict_oh),
+            .bin_o(plru_evict)
         );
 
         always_comb begin

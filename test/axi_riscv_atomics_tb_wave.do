@@ -515,7 +515,6 @@ add wave -noupdate -group {LRSC Adapter} -group mst /axi_riscv_atomics_tb/i_axi_
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/clk_i
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/rst_ni
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/clr_i
-add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/testmode_i
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/valid_i
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/ready_o
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/data_i
@@ -527,7 +526,6 @@ add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo /axi_ri
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo -expand -group FIFO /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/i_fifo/i_fifo_v3/clk_i
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo -expand -group FIFO /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/i_fifo/i_fifo_v3/rst_ni
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo -expand -group FIFO /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/i_fifo/i_fifo_v3/flush_i
-add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo -expand -group FIFO /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/i_fifo/i_fifo_v3/testmode_i
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo -expand -group FIFO /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/i_fifo/i_fifo_v3/full_o
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo -expand -group FIFO /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/i_fifo/i_fifo_v3/empty_o
 add wave -noupdate -group {LRSC Adapter} -group mst -group aw_trans_fifo -expand -group FIFO /axi_riscv_atomics_tb/i_axi_atomic_adapter/i_atomics/i_lrsc/i_aw_trans_reg/i_fifo/i_fifo_v3/usage_o

@@ -335,15 +335,16 @@ module axi_riscv_lrsc #(
     // AR and R Channel
 
     // IQ Queue to track in-flight reads
-    id_queue #(
-        .ID_WIDTH            (AXI_ID_WIDTH),
-        .CAPACITY            (AXI_MAX_READ_TXNS),
-        .data_t              (r_flight_t),
-        .FULL_BW             (FULL_BANDWIDTH),
-        .CUT_OUP_POP_INP_GNT (CUT_OUP_POP_INP_GNT)
+    cc_id_queue #(
+        .IdWidth         (AXI_ID_WIDTH),
+        .Capacity        (AXI_MAX_READ_TXNS),
+        .data_t          (r_flight_t),
+        .FullBw          (FULL_BANDWIDTH),
+        .CutOupPopInpGnt (CUT_OUP_POP_INP_GNT)
     ) i_read_in_flight_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
+        .clr_i              (1'b0),
         .inp_id_i           (slv_ar_id_i),
         .inp_data_i         (rifq_inp_data),
         .inp_req_i          (rifq_inp_req),
@@ -365,18 +366,19 @@ module axi_riscv_lrsc #(
     assign rifq_inp_data.excl = ar_push_excl;
 
     // Fork requests from AR into reservation table and queue of in-flight reads.
-    stream_fork #(
-        .N_OUP  (2)
+    cc_stream_fork #(
+        .NumOup  (2)
     ) i_ar_push_fork (
         .clk_i      (clk_i),
         .rst_ni     (rst_ni),
+        .clr_i      (1'b0),
         .valid_i    (ar_push_valid),
         .ready_o    (ar_push_ready),
         .valid_o    ({art_filter_valid, rifq_inp_req}),
         .ready_i    ({art_filter_ready, rifq_inp_gnt})
     );
 
-    stream_filter i_art_filter (
+    cc_stream_filter i_art_filter (
         .valid_i    (art_filter_valid),
         .ready_o    (art_filter_ready),
         .drop_i     (!ar_push_res),
@@ -496,16 +498,16 @@ module axi_riscv_lrsc #(
     // AW, W and B Channel
 
     // FIFO to track commands for W bursts.
-    fifo_v3 #(
-        .FALL_THROUGH   (1'b0), // There would be a combinatorial loop if this were a fall-through
-                                // register.  Optimizing this can reduce the latency of this module.
-        .dtype          (w_cmd_t),
-        .DEPTH          (AXI_MAX_WRITE_TXNS)
+    cc_fifo #(
+        .FallThrough(1'b0), // There would be a combinatorial loop if this were a fall-through
+                            // register.  Optimizing this can reduce the latency of this module.
+        .data_t     (w_cmd_t),
+        .Depth      (AXI_MAX_WRITE_TXNS)
     ) i_w_cmd_fifo (
         .clk_i      (clk_i),
         .rst_ni     (rst_ni),
+        .clr_i      (1'b0),
         .flush_i    (1'b0),
-        .testmode_i (1'b0),
         .full_o     (w_cmd_full),
         .empty_o    (w_cmd_empty),
         .usage_o    (),
@@ -522,15 +524,16 @@ module axi_riscv_lrsc #(
     typedef logic [$bits(b_cmd_t)-1:0] b_cmd_flat_t;
     b_cmd_flat_t b_status_inp_cmd_flat, b_status_oup_cmd_flat;
     assign b_status_inp_cmd_flat = b_cmd_flat_t'(b_status_inp_cmd);
-    id_queue #(
-        .ID_WIDTH            (AXI_ID_WIDTH),
-        .CAPACITY            (AXI_MAX_WRITE_TXNS),
-        .data_t              (b_cmd_flat_t),
-        .FULL_BW             (FULL_BANDWIDTH),
-        .CUT_OUP_POP_INP_GNT (CUT_OUP_POP_INP_GNT)
+    cc_id_queue #(
+        .IdWidth         (AXI_ID_WIDTH),
+        .Capacity        (AXI_MAX_WRITE_TXNS),
+        .data_t          (b_cmd_flat_t),
+        .FullBw          (FULL_BANDWIDTH),
+        .CutOupPopInpGnt (CUT_OUP_POP_INP_GNT)
     ) i_b_status_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
+        .clr_i              (1'b0),
         .inp_id_i           (b_status_inp_id),
         .inp_data_i         (b_status_inp_cmd_flat),
         .inp_req_i          (b_status_inp_req),
@@ -552,15 +555,16 @@ module axi_riscv_lrsc #(
     assign b_status_oup_cmd = b_cmd_t'(b_status_oup_cmd_flat);
 
     // ID Queue to track in-flight writes.
-    id_queue #(
-        .ID_WIDTH            (AXI_ID_WIDTH),
-        .CAPACITY            (AXI_MAX_WRITE_TXNS),
-        .data_t              (w_flight_t),
-        .FULL_BW             (FULL_BANDWIDTH),
-        .CUT_OUP_POP_INP_GNT (CUT_OUP_POP_INP_GNT)
+    cc_id_queue #(
+        .IdWidth         (AXI_ID_WIDTH),
+        .Capacity        (AXI_MAX_WRITE_TXNS),
+        .data_t          (w_flight_t),
+        .FullBw          (FULL_BANDWIDTH),
+        .CutOupPopInpGnt (CUT_OUP_POP_INP_GNT)
     ) i_write_in_flight_queue (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),
+        .clr_i              (1'b0),
         .inp_id_i           (mst_aw_id_o),
         .inp_data_i         ({mst_aw_addr_o[AXI_ADDR_WIDTH-1:AXI_ADDR_LSB], slv_aw_lock_i}),
         .inp_req_i          (mst_aw_valid && mst_aw_ready),
@@ -593,12 +597,13 @@ module axi_riscv_lrsc #(
     end
 // pragma translate_on
 
-    stream_arbiter #(
-        .DATA_T (wifq_exists_t),
-        .N_INP  (2)
+    cc_stream_arbiter #(
+        .data_t (wifq_exists_t),
+        .NumInp (2)
     ) i_wifq_exists_arb (
         .clk_i          (clk_i),
         .rst_ni         (rst_ni),
+        .clr_i          (1'b0),
         .inp_data_i     ({ar_wifq_exists_inp,   aw_wifq_exists_inp}),
         .inp_valid_i    ({ar_wifq_exists_req,   aw_wifq_exists_req}),
         .inp_ready_o    ({ar_wifq_exists_gnt,   aw_wifq_exists_gnt}),
@@ -607,11 +612,12 @@ module axi_riscv_lrsc #(
         .oup_ready_i    (wifq_exists_gnt)
     );
 
-    stream_fork #(
-        .N_OUP  (2)
+    cc_stream_fork #(
+        .NumOup  (2)
     ) i_mst_b_fork (
         .clk_i      (clk_i),
         .rst_ni     (rst_ni),
+        .clr_i      (1'b0),
         .valid_i    (mst_b_valid_i),
         .ready_o    (mst_b_ready_o),
         .valid_o    ({mst_b_valid, wifq_oup_req}),
@@ -619,15 +625,15 @@ module axi_riscv_lrsc #(
     );
 
     // FIFO to track B responses that are to be injected.
-    fifo_v3 #(
-        .FALL_THROUGH   (1'b0),
-        .dtype          (b_inj_t),
-        .DEPTH          (AXI_MAX_WRITE_TXNS)
+    cc_fifo #(
+        .FallThrough   (1'b0),
+        .data_t        (b_inj_t),
+        .Depth         (AXI_MAX_WRITE_TXNS)
     ) i_b_inj_fifo (
         .clk_i      (clk_i),
         .rst_ni     (rst_ni),
+        .clr_i      (1'b0),
         .flush_i    (1'b0),
-        .testmode_i (1'b0),
         .full_o     (b_inj_full),
         .empty_o    (b_inj_empty),
         .usage_o    (),
@@ -662,13 +668,12 @@ module axi_riscv_lrsc #(
             mst_aw_user_o} = mst_aw;
 
 
-    fall_through_register #(
-        .T (aw_chan_t)
+    cc_fall_through_register #(
+        .data_t (aw_chan_t)
     ) i_aw_trans_reg (
         .clk_i       (clk_i),
         .rst_ni      (rst_ni),
         .clr_i       (1'b0),
-        .testmode_i  (1'b0),
         // Input
         .valid_i     (mst_aw_valid),
         .ready_o     (mst_aw_ready),
@@ -988,13 +993,12 @@ module axi_riscv_lrsc #(
     assign b_status_oup_pop = slv_b_valid && slv_b_ready;
 
     // Register in front of slv_b to prevent changes by FSM while valid and not yet ready.
-    stream_register #(
-        .T  (b_chan_t)
+    cc_stream_register #(
+        .data_t  (b_chan_t)
     ) slv_b_reg (
         .clk_i      (clk_i),
         .rst_ni     (rst_ni),
         .clr_i      (1'b0),
-        .testmode_i (1'b0),
 
         .valid_i    (slv_b_valid),
         .ready_o    (slv_b_ready),
@@ -1006,12 +1010,13 @@ module axi_riscv_lrsc #(
     );
 
     // Fall-through register in front of slv_r to remove mutual dependency.
-    spill_register #( // There would be a combinatorial loop if this were a fall-through register.
+    cc_spill_register #( // There would be a combinatorial loop if this were a fall-through register.
                       // Optimizing this can reduce the latency of this module.
-        .T  (r_chan_t)
+        .data_t  (r_chan_t)
     ) slv_r_reg (
         .clk_i      (clk_i),
         .rst_ni     (rst_ni),
+        .clr_i      (1'b0),
 
         .valid_i    (slv_r_valid),
         .ready_o    (slv_r_ready),
