@@ -91,6 +91,7 @@ module axi_res_tbl #(
         ) i_reservation_plru (
             .clk_i(clk_i),
             .rst_ni(rst_ni),
+            .clr_i(1'b0),
             .used_i(plru_used),
             .plru_o(plru_evict_oh)
         );
