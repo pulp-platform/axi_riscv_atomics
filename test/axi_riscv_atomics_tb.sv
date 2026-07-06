@@ -136,7 +136,6 @@ module automatic axi_riscv_atomics_tb;
     ) i_axi_mux (
         .clk_i  ( clk     ),
         .rst_ni ( rst_n   ),
-        .test_i ( 1'b0    ),
         .slv    ( axi_cl  ),
         .mst    ( axi_iwc )
     );
@@ -258,7 +257,6 @@ module automatic axi_riscv_atomics_tb;
         test_all_amos();
         test_same_address();
         test_amo_write_consistency();
-        // test_interleaving(); // Only works on old memory controller
         test_atomic_counter();
         random_amo();
 
