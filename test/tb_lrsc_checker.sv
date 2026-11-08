@@ -1,8 +1,8 @@
 // Copyright (c) 2026 ZhaoWenyao
 // SPDX-License-Identifier: SHL-0.51
 
-// V01 isolated checker test: actual LRSC module and fixed source dependencies.
-// No force or modification is applied to the production SoC.
+// Isolated assertion-sensitivity test for the actual LR/SC module.
+// Fault injections apply only to this testbench's DUT instance.
 `timescale 1ns/1ps
 module tb_lrsc_checker;
   localparam int AXI_ADDR_WIDTH = 32;
