@@ -23,6 +23,10 @@ All eight runs completed with the expected results on VCS W-2024.09-SP1.
 The official base was `97a1dd2ac643c276880420a0cf8eea697f228aa9`.
 Dependencies matched its Bender.lock: common_cells `9ca8a765` and axi `a256a3b8`.
 
+The `lrsc_assertions` Bender target includes this fault-injection test.
+Keep it separate from the normal `test` target. For example, generate the
+compile script with `bender script vsim -t lrsc_assertions`.
+
 ## Reproduction
 
 Obtain the dependencies at the revisions in Bender.lock.
@@ -54,6 +58,28 @@ Use a separate output directory. Keep the same test and dependency files.
 Each log must contain exactly one `LRSC_STIMULUS_DONE` and one normal `$finish`.
 Match the assertion messages against the table. Do not classify deliberate negative cases by process exit code alone.
 No new synthesis run is needed for this assertion-only change: all edits are inside existing `translate_off` blocks.
-The test does not claim full LR/SC functional or reset-protocol verification.
+The fault-injection test is separate from the original normal-transaction regressions.
 
 AI assistance: OpenAI Codex assisted the patch, test adaptation, and validation.
+
+## Original regression entry
+
+The two original testbenches remain in the Bender `test` target.
+The full 32-master AMO test finishes normally with VCS W-2024.09-SP1.
+Its drivers now wait for their constructors before the first access, which
+removes a time-zero scheduling race. No transaction count or data check changes.
+
+The original LR/SC test runs 10000 reads and writes with Questa 2024.1 and seed 1.
+Its scoreboard previously rejected W accepted before AW. AXI permits that order
+([AMBA IHI 0022H, A3.3](https://developer.arm.com/-/media/Arm%20Developer%20Community/PDF/IHI0022H_amba_axi_protocol_spec.pdf)). The scoreboard now retains early W beats until their
+address records arrive, then checks every data, strobe, last and user field.
+It also checks the final queue and observed/checked beat counts.
+Both the original RTL and this assertion change pass the same revised test,
+with all 9066 forwarded W beats checked and normal finish at 652655 ns.
+The original scoreboard failure at 612937 ns remains recorded.
+Both versions retain two Questa warnings for fixed page-mask slices in the
+narrow-address test configuration. This change adds no such warnings.
+
+The synthesis-visible RTL and dependency lock remain unchanged.
+The installed Questa version differs from CI's 2022.3, so these are local results.
+The internal GitLab workflow still needs the upstream repository's credentials.

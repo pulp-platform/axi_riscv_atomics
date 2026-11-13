@@ -135,6 +135,8 @@ module axi_riscv_lrsc_tb #(
     ) aw_excl_queue = new;
     axi_driver_t axi_master = new(upstream_dv);
     logic mst_done = 1'b0;
+    axi_driver_t::w_beat_t downstream_w_queue[$];
+    int unsigned observed_w_beats = 0, checked_w_beats = 0;
     initial begin
         static axi_driver_t::r_beat_t   r_beat;
         static axi_driver_t::b_beat_t   b_beat;
@@ -232,6 +234,11 @@ module axi_riscv_lrsc_tb #(
 
     initial begin
         wait (mst_done);
+        @(negedge clk);
+        assert (downstream_w_queue.size() == 0 && observed_w_beats == checked_w_beats)
+            else $fatal(1, "Unmatched downstream W beats: observed=%0d checked=%0d pending=%0d",
+                        observed_w_beats, checked_w_beats, downstream_w_queue.size());
+        $display("Checked %0d of %0d downstream W beats.", checked_w_beats, observed_w_beats);
         $display("Simulation completed after %0d read and write transactions.", N_TXNS);
         $finish();
     end
@@ -567,7 +574,17 @@ module axi_riscv_lrsc_tb #(
                 w_beat.w_user = upstream.w_user;
                 w_transfer_queue.push_back(w_beat);
             end
-            // Clear dropped W beats from transfer queue.
+            // AW and W are independent. Retain W accepted before its AW metadata.
+            if (downstream.w_valid && downstream.w_ready) begin
+                automatic axi_driver_t::w_beat_t w_beat = new;
+                w_beat.w_data = downstream.w_data;
+                w_beat.w_strb = downstream.w_strb;
+                w_beat.w_last = downstream.w_last;
+                w_beat.w_user = downstream.w_user;
+                downstream_w_queue.push_back(w_beat);
+                observed_w_beats++;
+            end
+            // Match every forwarded beat and discard only the modeled failed SC beats.
             forever begin
                 automatic w_cmd_t w_cmd;
                 if (w_cmd_queue.size() == 0 || w_transfer_queue.size() == 0) begin
@@ -594,23 +611,20 @@ module axi_riscv_lrsc_tb #(
                         end
                     end
                 end else begin
-                    break;
-                end
-            end
-            // Ensure downstream W beats match remaining beats in the W transfer queue.
-            if (downstream.w_valid && downstream.w_ready) begin
-                automatic axi_driver_t::w_beat_t w_beat;
-                automatic w_cmd_t w_cmd;
-                assert (w_cmd_queue.size() > 0) else $fatal("downstream.W: Illegal beat!");
-                w_cmd = w_cmd_queue[0];
-                assert (w_cmd.thru) else $error("downstream.W: Beat should not have gone through!");
-                w_beat = w_transfer_queue.pop_front();
-                assert (downstream.w_data == w_beat.w_data);
-                assert (downstream.w_strb == w_beat.w_strb);
-                assert (downstream.w_last == w_beat.w_last);
-                assert (downstream.w_user == w_beat.w_user);
-                if (w_beat.w_last) begin
-                    void'(w_cmd_queue.pop_front());
+                    automatic axi_driver_t::w_beat_t expected, actual;
+                    if (downstream_w_queue.size() == 0) begin
+                        break;
+                    end
+                    expected = w_transfer_queue.pop_front();
+                    actual = downstream_w_queue.pop_front();
+                    assert (actual.w_data == expected.w_data);
+                    assert (actual.w_strb == expected.w_strb);
+                    assert (actual.w_last == expected.w_last);
+                    assert (actual.w_user == expected.w_user);
+                    checked_w_beats++;
+                    if (expected.w_last) begin
+                        void'(w_cmd_queue.pop_front());
+                    end
                 end
             end
             // Push downstream B beats into transfer queues and remove write from in-flights.
