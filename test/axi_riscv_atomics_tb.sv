@@ -248,6 +248,7 @@ module automatic axi_riscv_atomics_tb;
     initial begin : main
         // Initialize the AXI drivers
         for (int i = 0; i < NUM_MASTERS; i++) begin
+            wait (axi_dut_master[i] != null);
             axi_dut_master[i].reset_master();
         end
         // Wait for reset

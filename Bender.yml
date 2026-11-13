@@ -36,3 +36,7 @@ sources:
   - target: synth_test
     files:
       - test/axi_riscv_lrsc_synth.v
+
+  - target: lrsc_assertions
+    files:
+      - test/tb_lrsc_checker.sv

@@ -427,7 +427,7 @@ module axi_riscv_lrsc #(
 
 // pragma translate_off
     always @(posedge clk_i) begin
-        if (~rst_ni) begin
+        if (rst_ni) begin
             if (rifq_oup_req && rifq_oup_gnt) begin
                 assert (rifq_oup_data_valid) else $error("Unexpected R with ID %0x!", mst_r_id_i);
             end
@@ -582,7 +582,7 @@ module axi_riscv_lrsc #(
 
 // pragma translate_off
     always @(posedge clk_i) begin
-        if (~rst_ni) begin
+        if (rst_ni) begin
             if (mst_aw_valid && mst_aw_ready) begin
                 assert (wifq_inp_gnt) else $error("Missed enqueuing of in-flight write!");
             end
